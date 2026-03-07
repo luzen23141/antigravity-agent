@@ -21,6 +21,9 @@ export interface AccountSessionListAccountItem {
   userAvatar: string;
   tier: UserTier;
   apiKey: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number | null;
   persisted: boolean;
 }
 

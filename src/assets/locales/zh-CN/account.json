@@ -20,7 +20,10 @@
   },
   "accountDetail": {
     "title": "用户详情",
-    "apiKey": "API 密钥"
+    "apiKey": "API 密钥",
+    "accessToken": "Access Token",
+    "refreshToken": "Refresh Token",
+    "copyJson": "复制为 JSON"
   },
   "delete": {
     "title": "确认删除账户",

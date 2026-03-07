@@ -15,7 +15,10 @@
   },
   "accountDetail": {
     "title": "使用者詳情",
-    "apiKey": "API 金鑰"
+    "apiKey": "API 金鑰",
+    "accessToken": "Access Token",
+    "refreshToken": "Refresh Token",
+    "copyJson": "複製為 JSON"
   },
   "delete": {
     "title": "確認刪除帳戶",

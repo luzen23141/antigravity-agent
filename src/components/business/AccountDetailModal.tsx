@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Copy, Key, User } from 'lucide-react';
-import type { AntigravityAccount } from '@/commands/types/account.types';
+import { Check, Copy, Key, User, FileJson } from 'lucide-react';
+import dayjs from 'dayjs';
 import { BaseButton } from '@/components/base-ui/BaseButton';
 import { cn } from '@/lib/utils.ts';
 import { logger } from '@/lib/logger.ts';
@@ -33,6 +33,30 @@ const BusinessUserDetail: React.FC<BusinessUserDetailProps> = ({
       logger.error('复制失败', {
         module: 'UserDetail',
         action: 'copy_failed',
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  };
+
+  // 复制为 JSON 格式
+  const copyAsJson = async () => {
+    try {
+      const now = Date.now();
+      const payload = {
+        access_token: account.accessToken,
+        email: account.email,
+        expired: account.expiresIn ? dayjs(now + account.expiresIn * 1000).format() : null,
+        expires_in: account.expiresIn,
+        refresh_token: account.refreshToken,
+        timestamp: now
+      };
+      await navigator.clipboard.writeText(JSON.stringify(payload));
+      setCopiedField('json');
+      setTimeout(() => setCopiedField(null), 2000);
+    } catch (error) {
+      logger.error('复制 JSON 失败', {
+        module: 'UserDetail',
+        action: 'copy_json_failed',
         error: error instanceof Error ? error.message : String(error)
       });
     }
@@ -93,10 +117,25 @@ const BusinessUserDetail: React.FC<BusinessUserDetailProps> = ({
       open={isOpen}
       onCancel={() => onOpenChange(false)}
     >
-      {<div className={"flex flex-row items-center gap-0.5"}>
-        <User className="h-4 w-4 text-gray-500" />
-        <span>{t('accountDetail.title')}</span>
-      </div>}
+      <div className="flex flex-row items-center justify-between pr-8">
+        <div className="flex flex-row items-center gap-0.5">
+          <User className="h-4 w-4 text-gray-500" />
+          <span>{t('accountDetail.title')}</span>
+        </div>
+        <BaseButton
+          variant="ghost"
+          size="sm"
+          className="h-7 text-xs flex items-center gap-1.5"
+          onClick={copyAsJson}
+        >
+          {copiedField === 'json' ? (
+            <Check className="h-3.5 w-3.5 text-green-600" />
+          ) : (
+            <FileJson className="h-3.5 w-3.5 text-gray-500" />
+          )}
+          {t('accountDetail.copyJson', 'Copy JSON')}
+        </BaseButton>
+      </div>
       <div className="p-5 space-y-6 max-h-[70vh] overflow-y-auto">
         {/* 用户头像和基本信息 */}
         <div className="flex items-center gap-4">
@@ -119,6 +158,22 @@ const BusinessUserDetail: React.FC<BusinessUserDetailProps> = ({
           value={"****"}
           copyable
           fieldName="apiKey"
+        />
+
+        <InfoItem
+          icon={<Key className="h-4 w-4 text-blue-500" />}
+          label={t('accountDetail.accessToken')}
+          value={"****"}
+          copyable
+          fieldName="accessToken"
+        />
+
+        <InfoItem
+          icon={<Key className="h-4 w-4 text-green-500" />}
+          label={t('accountDetail.refreshToken')}
+          value={"****"}
+          copyable
+          fieldName="refreshToken"
         />
       </div>
     </Modal>

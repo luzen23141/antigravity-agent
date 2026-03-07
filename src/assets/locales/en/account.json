@@ -20,7 +20,10 @@
   },
   "accountDetail": {
     "title": "User Details",
-    "apiKey": "API Key"
+    "apiKey": "API Key",
+    "accessToken": "Access Token",
+    "refreshToken": "Refresh Token",
+    "copyJson": "Copy JSON"
   },
   "delete": {
     "title": "Confirm Account Deletion",

@@ -206,6 +206,8 @@ function makeSessionItem(
     claudeQuoteRestIn: addition.claudeQuoteRestIn,
     tier: base.tier,
     apiKey: `sk_${local}`,
+    accessToken: `ya29.mock_access_token_${local}`,
+    refreshToken: `1//mock_refresh_token_${local}`,
     persisted: true,
   };
 }
@@ -242,6 +244,8 @@ const longEmailItem: AccountSessionListAccountItem = {
   claudeQuoteRestIn: '2025-12-22T09:00:00Z',
   tier: 'g1-pro-tier',
   apiKey: 'sk_mock_long_email',
+  accessToken: 'ya29.mock_access_token_long_email',
+  refreshToken: '1//mock_refresh_token_long_email',
   persisted: true,
 };
 

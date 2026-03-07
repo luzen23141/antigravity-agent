@@ -352,7 +352,8 @@ async fn get_paths() -> impl Responder {
 
 #[derive(serde::Deserialize)]
 struct CryptoRequest {
-    data: String, // json_data or encrypted_data
+    #[serde(alias = "jsonData", alias = "encryptedData")]
+    data: String,
     password: String,
 }
 

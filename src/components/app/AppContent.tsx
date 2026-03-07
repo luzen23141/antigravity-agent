@@ -197,6 +197,9 @@ export function AppContent() {
       nickName: account.antigravity_auth_status.name,
       userAvatar: accountAdditionDatum?.userAvatar ?? "",
       apiKey: account.antigravity_auth_status.api_key ?? '',
+      accessToken: account.oauth_token?.access_token ?? '',
+      refreshToken: account.oauth_token?.refresh_token ?? '',
+      expiresIn: account.oauth_token?.expiry_seconds ?? null,
       // 使用后端返回的真实 tier_id，如果获取失败或为 null 则回退到 'free-tier'
       tier: (account.user_status?.raw_data?.plan?.tier_id || 'free-tier') as UserTier,
       persisted: account.oauth_token !== null,
