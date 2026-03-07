@@ -2,32 +2,39 @@ use super::types::{AccountMetrics, QuotaItem, TriggerResult};
 use serde_json::Value;
 
 struct ModelTarget {
+    /// Exact key or prefix to match against available model keys.
+    /// Prefix matches are used when `prefix_match` is true.
     key: &'static str,
     display_name: &'static str,
+    prefix_match: bool,
 }
 
 const MODEL_TARGETS: [ModelTarget; 4] = [
     ModelTarget {
         key: "gemini-3-pro-high",
         display_name: "Gemini Pro",
+        prefix_match: false,
     },
     ModelTarget {
         key: "gemini-3-flash",
         display_name: "Gemini Flash",
+        prefix_match: false,
     },
     ModelTarget {
         key: "gemini-3-pro-image",
         display_name: "Gemini Image",
+        prefix_match: false,
     },
     ModelTarget {
-        key: "claude-opus-4-5-thinking",
+        key: "claude-opus",
         display_name: "Claude",
+        prefix_match: true,
     },
 ];
 
 #[derive(Debug, Clone)]
 struct ParsedQuota {
-    model_key: &'static str,
+    model_key: String,
     item: QuotaItem,
 }
 
@@ -140,7 +147,7 @@ pub async fn trigger_quota_refresh(
 
     for quota in parsed_quotas {
         if quota.item.percentage > 0.9999 {
-            match trigger_minimal_query(&token_info.access_token, &project, quota.model_key).await {
+            match trigger_minimal_query(&token_info.access_token, &project, &quota.model_key).await {
                 Ok(()) => triggered_models.push(quota.item.model_name.clone()),
                 Err(error) => {
                     error!(
@@ -190,7 +197,17 @@ fn parse_quotas_for_targets(models_json: &Value) -> Vec<ParsedQuota> {
     MODEL_TARGETS
         .iter()
         .filter_map(|target| {
-            let model_data = models_map.get(target.key)?;
+            let (matched_key, model_data) = if target.prefix_match {
+                // Find the first model key that starts with the prefix
+                models_map
+                    .iter()
+                    .find(|(k, _)| k.starts_with(target.key))
+                    .map(|(k, v)| (k.as_str(), v))?
+            } else {
+                let data = models_map.get(target.key)?;
+                (target.key, data)
+            };
+
             let quota_info = model_data.get("quotaInfo")?;
 
             let percentage = quota_info
@@ -203,8 +220,15 @@ fn parse_quotas_for_targets(models_json: &Value) -> Vec<ParsedQuota> {
                 .unwrap_or("")
                 .to_string();
 
+            tracing::debug!(
+                target_key = target.key,
+                matched_key = matched_key,
+                display_name = target.display_name,
+                "Matched model for quota"
+            );
+
             Some(ParsedQuota {
-                model_key: target.key,
+                model_key: matched_key.to_string(),
                 item: QuotaItem {
                     model_name: target.display_name.to_string(),
                     percentage,
