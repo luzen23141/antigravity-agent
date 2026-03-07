@@ -23,6 +23,7 @@ export interface AccountSessionListAccountItem {
   apiKey: string;
   accessToken: string;
   refreshToken: string;
+  projectId: string;
   expiresIn: number | null;
   persisted: boolean;
 }

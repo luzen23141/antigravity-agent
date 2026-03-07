@@ -47,6 +47,7 @@ const BusinessUserDetail: React.FC<BusinessUserDetailProps> = ({
         email: account.email,
         expired: account.expiresIn ? dayjs(now + account.expiresIn * 1000).format() : null,
         expires_in: account.expiresIn,
+        project_id: account.projectId,
         refresh_token: account.refreshToken,
         timestamp: now
       };

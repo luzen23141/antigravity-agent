@@ -101,6 +101,7 @@ pub async fn get_metrics(
         email,
         user_id: token_info.user_id,
         avatar_url: token_info.avatar_url,
+        project_id: project,
         quotas,
     })
 }

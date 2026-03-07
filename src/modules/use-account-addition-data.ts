@@ -24,6 +24,7 @@ export interface AccountAdditionData {
   claudeQuoteRestIn: string
   userAvatar: string
   userId: string
+  projectId: string
 }
 
 export const useAccountAdditionData = create<State & Actions>((setState, getState) => ({
@@ -67,6 +68,7 @@ export const useAccountAdditionData = create<State & Actions>((setState, getStat
             claudeQuoteRestIn: claude.resetText,
             userAvatar: metric.avatar_url,
             userId: metric.user_id,
+            projectId: metric.project_id,
           }
         }
       });

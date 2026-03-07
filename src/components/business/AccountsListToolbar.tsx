@@ -208,12 +208,12 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
-        <div className="inline-flex items-center w-fit rounded-full border border-slate-200 bg-slate-100 p-0.5 transition-colors hover:border-slate-300">
+        <div className="inline-flex items-center w-fit rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-0.5 transition-colors hover:border-slate-300 dark:hover:border-slate-600">
           {/* 左侧：标签部分 (较弱的视觉) */}
-          <span className="px-2 py-0.5 text-xs font-medium text-slate-600">
+          <span className="px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
             {t('toolbar.accounts')}
           </span>
-          <span className="flex min-w-[20px] items-center justify-center rounded-full bg-white px-1.5 py-0.5 text-xs font-bold text-slate-800 shadow-sm">
+          <span className="flex min-w-[20px] items-center justify-center rounded-full bg-white dark:bg-slate-950 px-1.5 py-0.5 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-sm">
             {total}
           </span>
         </div>

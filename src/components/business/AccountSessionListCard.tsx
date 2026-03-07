@@ -141,7 +141,11 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
       onMouseMove={handleMouseMove}
       className={cn(
         "group w-[340px] rounded-2xl px-6 py-5 border cursor-pointer relative overflow-hidden",
-        // 移除 hover:shadow-xl，因为我们完全用 JS 控制阴影
+        "transition-colors duration-200",
+        props.isCurrentUser
+          ? "border-blue-400/50 dark:border-blue-500/50 ring-1 ring-blue-400/50"
+          : "border-slate-200 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600",
+        !props.persisted && "ring-2 ring-red-500 ring-offset-2 dark:ring-offset-slate-950"
       )}
       style={otherStyles}
 
@@ -217,17 +221,17 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 min-w-0">
               <Tooltip title={props.nickName} styles={{ container: tooltipInnerStyle }}>
-                <h2 className="flex-1 min-w-0 text-lg font-bold text-slate-900 leading-tight line-clamp-2 break-words">
+                <h2 className="flex-1 min-w-0 text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight line-clamp-2 break-words">
                   {props.nickName}
                 </h2>
               </Tooltip>
               <div className="mt-0.5 shrink-0">
-                {tierBadgeMap[tier] || <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-md leading-none border border-gray-200 shadow-sm">{t('common:status.unknown')}</span>}
+                {tierBadgeMap[tier] || <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-bold rounded-md leading-none border border-slate-200 dark:border-slate-700 shadow-sm">{t('common:status.unknown')}</span>}
               </div>
             </div>
             <Tooltip title={props.email} styles={{ container: tooltipInnerStyle }}>
               {/* 高度用于统一一行和两行对其 */}
-              <p className="text-sm text-slate-500 font-medium line-clamp-2 break-all h-[42px]">{props.email}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium line-clamp-2 break-all h-[42px]">{props.email}</p>
             </Tooltip>
           </div>
         </motion.header>
