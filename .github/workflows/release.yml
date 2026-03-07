@@ -50,6 +50,7 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
+          target_commitish: ${{ github.sha }}
           tag_name: ${{ steps.version.outputs.tag }}
           name: 'Antigravity Agent ${{ steps.version.outputs.tag }}'
           body: |
