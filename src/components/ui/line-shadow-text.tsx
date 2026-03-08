@@ -10,6 +10,8 @@ import React from "react";
 interface LineShadowTextProps
   extends Omit<React.HTMLAttributes<HTMLElement>, keyof MotionProps>,
     MotionProps {
+  children?: React.ReactNode
+  className?: string
   shadowColor?: string
   as?: React.ElementType
 }
