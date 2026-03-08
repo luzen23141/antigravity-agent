@@ -1,17 +1,21 @@
+> **Forked from [MonchiLin/antigravity-agent](https://github.com/MonchiLin/antigravity-agent)** — This is a maintained fork with additional features and fixes.
+
 > [!CAUTION]
-> Support for Antigravity 1.16.5 is now available in the latest stable release, [download address](https://github.com/MonchiLin/antigravity-agent/releases). Please see [Version Note](Antigravity_1_5_6.md) for related changes.
+> Support for Antigravity 1.16.5 is now available in the latest stable release, [Download](https://github.com/luzen23141/antigravity-agent/releases). Please see [Version Note](Antigravity_1_5_6.md) for related changes.
 
 <div align="center">
 
 # Antigravity Agent
 
+[English](../README.md) | [繁體中文](README.zh-TW.md) | [简体中文](README.zh-CN.md)
+
 **Effortlessly manage your Antigravity multi-accounts**
 
-[![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)](../../releases)
-[![macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white)](../../releases)
-[![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](../../releases)
+[![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)](https://github.com/luzen23141/antigravity-agent/releases)
+[![macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white)](https://github.com/luzen23141/antigravity-agent/releases)
+[![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](https://github.com/luzen23141/antigravity-agent/releases)
 
-[![Download](https://img.shields.io/badge/Downloads-View_Releases-2ea44f?style=for-the-badge&logo=github)](../../releases)
+[![Download](https://img.shields.io/badge/Downloads-View_Releases-2ea44f?style=for-the-badge&logo=github)](https://github.com/luzen23141/antigravity-agent/releases)
 
 <br />
 
@@ -24,14 +28,12 @@
 
 <br />
 
-
-
 </div>
 
 ---
 
 > [!WARNING]
-> This software is distributed exclusively through the official [GitHub Releases](https://github.com/MonchiLin/antigravity-agent/releases) channel.  
+> This software is distributed exclusively through the official [GitHub Releases](https://github.com/luzen23141/antigravity-agent/releases) channel.
 > As it involves sensitive account information, please do not download from other sources to ensure your data security.
 
 ---
@@ -102,8 +104,8 @@ Switch accounts and view model quota directly in the editor
 
 ## FAQ
 
-- **Can't install on macOS?**  
+- **Can't install on macOS?**
   As an unsigned app, macOS may block it from running. Please see the [macOS Installation Guide](macos-installation.en.md).
 
-- **How to install on Linux?**  
+- **How to install on Linux?**
   We recommend using the Flatpak version for the best experience. Please see the [Flatpak Installation Guide](flatpak-install.en.md).
