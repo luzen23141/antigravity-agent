@@ -73,33 +73,33 @@
         "test": "node ./out/test/runTest.js"
     },
     "devDependencies": {
-        "@tailwindcss/postcss": "^4.1.18",
-        "@tailwindcss/vite": "^4.1.18",
-        "@types/glob": "^8.1.0",
+        "@tailwindcss/postcss": "^4.2.1",
+        "@tailwindcss/vite": "^4.2.1",
+        "@types/glob": "^9.0.0",
         "@types/mocha": "^10.0.10",
-        "@types/node": "^25.0.3",
-        "@types/react": "^19.0.0",
-        "@types/react-dom": "^19.0.0",
-        "@types/vscode": "^1.104.0",
-        "@vitejs/plugin-react": "^5.1.2",
+        "@types/node": "^25.3.5",
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
+        "@types/vscode": "^1.109.0",
+        "@vitejs/plugin-react": "^5.1.4",
         "@vscode/test-electron": "^2.5.2",
-        "autoprefixer": "^10.4.23",
-        "glob": "^8.1.0",
-        "mocha": "^10.8.2",
-        "postcss": "^8.5.6",
-        "tailwindcss": "^4.1.18",
+        "autoprefixer": "^10.4.27",
+        "glob": "^13.0.6",
+        "mocha": "^11.7.5",
+        "postcss": "^8.5.8",
+        "tailwindcss": "^4.2.1",
         "typescript": "^5.9.3",
-        "vite": "^7.3.0"
+        "vite": "^7.3.1"
     },
     "dependencies": {
         "@vscode/codicons": "^0.0.44",
         "@vscode/webview-ui-toolkit": "^1.4.0",
         "dayjs": "^1.11.19",
-        "i18next": "^25.7.3",
-        "i18next-browser-languagedetector": "^8.2.0",
-        "react": "^19.0.0",
-        "react-dom": "^19.0.0",
-        "react-i18next": "^16.5.0",
-        "zustand": "^5.0.9"
+        "i18next": "^25.8.14",
+        "i18next-browser-languagedetector": "^8.2.1",
+        "react": "^19.2.4",
+        "react-dom": "^19.2.4",
+        "react-i18next": "^16.5.6",
+        "zustand": "^5.0.11"
     }
 }

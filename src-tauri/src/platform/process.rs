@@ -12,11 +12,11 @@ pub fn kill_antigravity_processes() -> Result<String, String> {
     let process_patterns = get_antigravity_process_patterns();
 
     for (pid, process) in system.processes() {
-        let process_name = process.name();
-        let process_cmd = process.cmd().join(" ");
+        let process_name = process.name().to_string_lossy();
+        let process_cmd = process.cmd().iter().map(|s| s.to_string_lossy()).collect::<Vec<_>>().join(" ");
 
         // 检查进程名或命令行是否匹配任何模式
-        if matches_antigravity_process(process_name, &process_cmd, &process_patterns) {
+        if matches_antigravity_process(&process_name, &process_cmd, &process_patterns) {
             tracing::info!("🎯 找到目标进程: {} (PID: {})", process_name, pid);
             tracing::info!("📝 命令行: {}", process_cmd);
 
@@ -59,10 +59,10 @@ pub fn is_antigravity_running() -> bool {
     let process_patterns = get_antigravity_process_patterns();
 
     for (pid, process) in system.processes() {
-        let process_name = process.name();
-        let process_cmd = process.cmd().join(" ");
+        let process_name = process.name().to_string_lossy();
+        let process_cmd = process.cmd().iter().map(|s| s.to_string_lossy()).collect::<Vec<_>>().join(" ");
 
-        if matches_antigravity_process(process_name, &process_cmd, &process_patterns) {
+        if matches_antigravity_process(&process_name, &process_cmd, &process_patterns) {
             tracing::debug!(
                 "✅ 发现运行中的 Antigravity 进程: {} (PID: {})",
                 process_name,
