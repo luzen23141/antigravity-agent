@@ -33,7 +33,11 @@ function unwrapResponse<T>(payload: unknown): T {
     return record.result as T;
   }
 
-  if ('message' in record && Object.keys(record).length <= 2) {
+  if ('data' in record && Object.keys(record).length === 1) {
+    return record.data as T;
+  }
+
+  if ('message' in record && Object.keys(record).length === 1) {
     return record.message as T;
   }
 
@@ -52,9 +56,9 @@ function unwrapResponse<T>(payload: unknown): T {
   return payload as T;
 }
 
-async function getSessionToken(): Promise<string> {
+async function getSessionToken(forceRefresh: boolean = false): Promise<string> {
   const cached = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
-  if (cached) {
+  if (cached && !forceRefresh) {
     return cached;
   }
 
@@ -120,6 +124,19 @@ const IGNORED_COMMANDS = new Set<string>([
   // All commands are now supported via HTTP
 ]);
 
+function shouldRefreshSessionToken(response: Response): boolean {
+  if (response.status === 401 || response.status === 403) {
+    return true;
+  }
+
+  const sessionStatus = response.headers.get('x-antigravity-session-status');
+  if (sessionStatus && sessionStatus.toLowerCase() === 'expired') {
+    return true;
+  }
+
+  return false;
+}
+
 /**
  * HTTP 调用实现
  * 直接使用命令名作为路由路径，参数透传
@@ -143,22 +160,36 @@ async function httpInvoke<T>(cmd: string, args?: any): Promise<T> {
     'Content-Type': 'application/json',
   };
 
-  if (cmd !== TOKEN_COMMAND) {
-    headers[SESSION_HEADER] = await getSessionToken();
-  }
+  let response: Response;
+  const executeRequest = async (forceRefreshSession: boolean): Promise<Response> => {
+    const requestHeaders: Record<string, string> = {
+      ...headers,
+    };
 
-  const options: RequestInit = {
-    method,
-    headers,
+    if (cmd !== TOKEN_COMMAND) {
+      requestHeaders[SESSION_HEADER] = await getSessionToken(forceRefreshSession);
+    }
+
+    const options: RequestInit = {
+      method,
+      headers: requestHeaders,
+    };
+
+    // POST 请求透传参数
+    if (method === 'POST' && args) {
+      options.body = JSON.stringify(args);
+    }
+
+    return fetch(url, options);
   };
 
-  // POST 请求透传参数
-  if (method === 'POST' && args) {
-    options.body = JSON.stringify(args);
-  }
-
   try {
-    const response = await fetch(url, options);
+    response = await executeRequest(false);
+
+    if (cmd !== TOKEN_COMMAND && shouldRefreshSessionToken(response)) {
+      response = await executeRequest(true);
+    }
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`HTTP Error ${response.status}: ${errorText}`);

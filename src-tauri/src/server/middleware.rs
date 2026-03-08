@@ -181,7 +181,10 @@ where
 fn requires_session_token(path: &str) -> bool {
     matches!(
         path,
-        "/api/save_antigravity_current_account"
+        "/api/get_antigravity_accounts"
+            | "/api/get_current_antigravity_account_info"
+            | "/api/collect_account_contents"
+            | "/api/save_antigravity_current_account"
             | "/api/restore_antigravity_account"
             | "/api/switch_to_antigravity_account"
             | "/api/clear_all_antigravity_data"

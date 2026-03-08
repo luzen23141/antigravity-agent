@@ -8,6 +8,8 @@ import { logger } from '@/lib/logger.ts';
 import { Modal } from "antd";
 import { AccountSessionListAccountItem } from "@/components/business/AccountSessionList.tsx";
 import { Avatar } from "@/components/ui/avatar.tsx";
+import { useAppSettings } from "@/modules/use-app-settings.ts";
+import { maskEmail, maskName } from "@/lib/string-masking.ts";
 
 interface BusinessUserDetailProps {
   isOpen: boolean;
@@ -27,7 +29,20 @@ const BusinessUserDetail: React.FC<BusinessUserDetailProps> = ({
   account
 }) => {
   const { t } = useTranslation(['account', 'common']);
+  const privateMode = useAppSettings(state => state.privateMode);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  const maskSensitive = (value: string): string => {
+    if (!value) {
+      return '';
+    }
+
+    if (value.length <= 8) {
+      return '••••••••';
+    }
+
+    return `${value.slice(0, 4)}••••••${value.slice(-4)}`;
+  };
 
   const markCopied = (fieldName: string) => {
     setCopiedField(fieldName);
@@ -35,6 +50,10 @@ const BusinessUserDetail: React.FC<BusinessUserDetailProps> = ({
   };
 
   const copyToClipboard = async (text: string, fieldName: string) => {
+    if (privateMode) {
+      return;
+    }
+
     try {
       await navigator.clipboard.writeText(text);
       markCopied(fieldName);
@@ -48,7 +67,7 @@ const BusinessUserDetail: React.FC<BusinessUserDetailProps> = ({
   };
 
   const copyAsJson = async () => {
-    if (!account) {
+    if (!account || privateMode) {
       return;
     }
 
@@ -150,7 +169,7 @@ const BusinessUserDetail: React.FC<BusinessUserDetailProps> = ({
             </div>
             <div>
               <div className="text-base font-semibold leading-none">{t('accountDetail.title')}</div>
-              <div className="mt-1 text-xs font-normal text-muted-foreground">{account.email}</div>
+              <div className="mt-1 text-xs font-normal text-muted-foreground">{privateMode ? maskEmail(account.email) : account.email}</div>
             </div>
           </div>
           <BaseButton
@@ -158,6 +177,7 @@ const BusinessUserDetail: React.FC<BusinessUserDetailProps> = ({
             size="sm"
             className="h-8 gap-1.5 rounded-xl text-xs"
             onClick={copyAsJson}
+            disabled={privateMode}
           >
             {copiedField === 'json' ? (
               <Check className="h-3.5 w-3.5 text-emerald-500" />
@@ -171,13 +191,13 @@ const BusinessUserDetail: React.FC<BusinessUserDetailProps> = ({
     >
       <div className="max-h-[70vh] space-y-6 overflow-y-auto p-6">
         <div className="flex items-center gap-4 rounded-3xl border border-border/70 bg-muted/30 p-4">
-          <Avatar src={account.userAvatar} alt={account.nickName} className="h-14 w-14 border border-border/70" />
+          <Avatar src={account.userAvatar} alt={privateMode ? maskName(account.nickName) : account.nickName} className="h-14 w-14 border border-border/70" />
           <div className="min-w-0 flex-1">
             <h3 className="truncate text-lg font-semibold text-foreground">
-              {account.nickName}
+              {privateMode ? maskName(account.nickName) : account.nickName}
             </h3>
             <p className="break-all text-sm text-muted-foreground">
-              {account.email}
+              {privateMode ? maskEmail(account.email) : account.email}
             </p>
           </div>
         </div>
@@ -186,16 +206,16 @@ const BusinessUserDetail: React.FC<BusinessUserDetailProps> = ({
           <InfoItem
             icon={<Key className={cn('h-4 w-4', iconColorMap.apiKey)} />}
             label={t('accountDetail.apiKey')}
-            value={account.apiKey || ''}
-            copyable
+            value={privateMode ? maskSensitive(account.apiKey || '') : (account.apiKey || '')}
+            copyable={!privateMode}
             fieldName="apiKey"
           />
 
           <InfoItem
             icon={<Key className={cn('h-4 w-4', iconColorMap.accessToken)} />}
             label={t('accountDetail.accessToken')}
-            value={account.accessToken || ''}
-            copyable
+            value={privateMode ? maskSensitive(account.accessToken || '') : (account.accessToken || '')}
+            copyable={!privateMode}
             fieldName="accessToken"
             isMultiline
           />
@@ -203,8 +223,8 @@ const BusinessUserDetail: React.FC<BusinessUserDetailProps> = ({
           <InfoItem
             icon={<Key className={cn('h-4 w-4', iconColorMap.refreshToken)} />}
             label={t('accountDetail.refreshToken')}
-            value={account.refreshToken || ''}
-            copyable
+            value={privateMode ? maskSensitive(account.refreshToken || '') : (account.refreshToken || '')}
+            copyable={!privateMode}
             fieldName="refreshToken"
             isMultiline
           />

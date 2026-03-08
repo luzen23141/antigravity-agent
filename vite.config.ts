@@ -1,12 +1,19 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import react from "@vitejs/plugin-react";
+import fs from "node:fs";
 import path from "path";
 import tailwindcss from "@tailwindcss/vite";
 import { fileURLToPath } from "node:url";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import { playwright } from "@vitest/browser-playwright";
 const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+const nodeModulesDir = path.join(dirname, 'node_modules');
+const allowedFsPaths = [dirname];
+
+if (fs.existsSync(nodeModulesDir)) {
+  allowedFsPaths.push(fs.realpathSync(nodeModulesDir));
+}
 
 // 通过环境变量控制是否运行 Storybook 测试，CI 可设置 SKIP_STORYBOOK_TESTS=1 来跳过
 const enableStorybookTests = !process.env.SKIP_STORYBOOK_TESTS;
@@ -18,6 +25,9 @@ export default defineConfig({
   server: {
     port: 1420,
     strictPort: true,
+    fs: {
+      allow: allowedFsPaths
+    },
     watch: {
       ignored: ["**/src-tauri/**"]
     }
