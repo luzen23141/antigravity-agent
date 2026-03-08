@@ -6,6 +6,32 @@ use serde_json::json;
 mod middleware;
 pub mod websocket;
 
+const ALLOWED_ORIGIN_PREFIXES: &[&str] = &[
+    "tauri://localhost",
+    "http://tauri.localhost",
+    "https://tauri.localhost",
+    "vscode-webview://",
+    "http://127.0.0.1",
+    "http://localhost",
+];
+
+fn is_allowed_origin(origin: &str) -> bool {
+    ALLOWED_ORIGIN_PREFIXES
+        .iter()
+        .any(|allowed| origin == *allowed || origin.starts_with(allowed))
+}
+
+
+#[get("/api/get_server_session_token")]
+async fn get_server_session_token(data: web::Data<AppState>) -> impl Responder {
+    let token = {
+        let state = data.inner.lock();
+        state.server_session_token.clone()
+    };
+
+    HttpResponse::Ok().json(json!({ "result": token }))
+}
+
 // =============================================================================
 // Account Service Endpoints
 // =============================================================================
@@ -503,15 +529,26 @@ pub fn init(app_handle: tauri::AppHandle, state: AppState) {
 
         sys.block_on(async move {
             let server = HttpServer::new(move || {
-                let cors = Cors::permissive();
+                let cors = Cors::default()
+                    .allow_any_method()
+                    .allowed_header(actix_web::http::header::CONTENT_TYPE)
+                    .allowed_header(middleware::SESSION_HEADER)
+                    .allowed_origin_fn(|origin, _req_head| {
+                        origin
+                            .to_str()
+                            .map(is_allowed_origin)
+                            .unwrap_or(false)
+                    });
 
                 App::new()
                     .wrap(cors)
+                    .wrap(middleware::RequireSessionToken)
                     // 使用中间件统一处理 camelCase -> snake_case 参数名
                     .wrap(middleware::CamelCaseToSnakeCase)
                     .app_data(web::Data::new(state.clone()))
                     .app_data(web::Data::new(app_handle.clone()))
                     // Account Service
+                    .service(get_server_session_token)
                     .service(status)
                     .service(get_accounts)
                     .service(get_current_account)

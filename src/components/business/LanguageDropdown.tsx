@@ -4,7 +4,6 @@ import { Dropdown, type MenuProps } from 'antd';
 import { Languages } from 'lucide-react';
 import { cn } from '@/lib/utils.ts';
 import { languages, type SupportedLanguage } from '@/i18n/config.ts';
-import { SettingsCommands } from '@/commands/SettingsCommands.ts';
 import { logger } from '@/lib/logger.ts';
 import toast from 'react-hot-toast';
 import { useAppSettings } from "@/modules/use-app-settings.ts";
@@ -67,13 +66,12 @@ export const LanguageDropdown: React.FC<LanguageSwitcherProps> = ({
   }));
 
   return (
-    <Dropdown menu={{ items: menuItems }} placement="bottomRight" trigger={['hover']}>
+    <Dropdown menu={{ items: menuItems }} placement="bottomRight" trigger={['click']}>
       <button
+        type="button"
         className={cn(
-          "flex items-center justify-center p-2 rounded-md transition-all duration-200 ease-in-out cursor-pointer",
-          "text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100",
-          "hover:bg-slate-100 dark:hover:bg-slate-800",
-          "active:scale-95",
+          "app-toolbar-pill h-10 w-10 justify-center rounded-xl p-0 transition-colors duration-200 ease-in-out cursor-pointer",
+          "text-muted-foreground hover:text-foreground hover:bg-accent/70",
           className
         )}
         title={t('settings:language.change')}

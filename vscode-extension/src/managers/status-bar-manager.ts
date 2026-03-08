@@ -5,10 +5,40 @@ import { AccountMetrics, AntigravityAccount } from '@/commands/types/account.typ
 import { getQuotaCategory } from '../constants/model-mappings';
 import { TranslationManager } from './translation-manager';
 import { API_CONFIG } from '../constants/api';
-// Dynamic import or require is used inside render to avoid top-level issues if needed, 
-// but standard import is better if file exists. 
+// Dynamic import or require is used inside render to avoid top-level issues if needed,
+// but standard import is better if file exists.
 // However, since we just added the file, let's use standard import.
 import { maskEmail } from '../utils/string-masking';
+
+const SESSION_HEADER = 'x-antigravity-session';
+let sessionTokenPromise: Promise<string> | null = null;
+
+async function getSessionToken(): Promise<string> {
+    if (!sessionTokenPromise) {
+        sessionTokenPromise = fetch(`${API_CONFIG.BASE_URL}/${API_CONFIG.ENDPOINTS.GET_SERVER_SESSION_TOKEN}`)
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch session token: ${response.status}`);
+                }
+
+                const payload = await response.json() as { result?: string; error?: string };
+                if (payload.error) {
+                    throw new Error(payload.error);
+                }
+                if (!payload.result) {
+                    throw new Error('Missing session token');
+                }
+
+                return payload.result;
+            })
+            .catch((error) => {
+                sessionTokenPromise = null;
+                throw error;
+            });
+    }
+
+    return sessionTokenPromise;
+}
 
 /**
  * Manages the VS Code Status Bar item for Antigravity.
@@ -198,7 +228,10 @@ export class StatusBarManager {
             // 2. Get Metrics
             const metricRes = await fetch(`${this.API_BASE}/${API_CONFIG.ENDPOINTS.GET_METRICS}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    [SESSION_HEADER]: await getSessionToken(),
+                },
                 body: JSON.stringify({ email })
             });
 

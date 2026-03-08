@@ -1,11 +1,12 @@
 "use client";
-import React, { useState } from "react";
+import { useState } from "react";
 import {
   motion,
   useTransform,
   AnimatePresence,
   useMotionValue,
   useSpring,
+  useReducedMotion,
 } from "motion/react";
 
 interface AnimatedTooltipProps {
@@ -20,6 +21,7 @@ export const AnimatedTooltip = ({
                                   className,
                                 }: AnimatedTooltipProps) => {
   const [isHovered, setIsHovered] = useState(false);
+  const shouldReduceMotion = useReducedMotion();
 
   // ==============================
   // 核心动效配置 (全部默认封装)
@@ -55,8 +57,11 @@ export const AnimatedTooltip = ({
       <AnimatePresence mode="popLayout">
         {isHovered && (
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.6 }}
-            animate={{
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.6 }}
+            animate={shouldReduceMotion ? {
+              opacity: 1,
+              transition: { duration: 0.16 }
+            } : {
               opacity: 1,
               y: 0,
               scale: 1,
@@ -66,20 +71,20 @@ export const AnimatedTooltip = ({
                 damping: 10,
               },
             }}
-            exit={{ opacity: 0, y: 20, scale: 0.6 }}
-            style={{
+            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 20, scale: 0.6 }}
+            style={shouldReduceMotion ? {
+              whiteSpace: "nowrap",
+            } : {
               translateX: translateX,
               rotate: rotate,
               whiteSpace: "nowrap",
             }}
-            // Tooltip 样式：绝对定位在顶部
-            className="absolute -top-16 left-1/2 -translate-x-1/2 flex text-xs flex-col items-center justify-center rounded-md bg-black/90 backdrop-blur-sm z-50 shadow-xl px-4 py-2"
+            className="absolute -top-16 left-1/2 z-50 flex -translate-x-1/2 flex-col items-center justify-center rounded-xl border border-border/70 bg-card/95 px-4 py-2 text-xs shadow-[0_18px_45px_-24px_rgba(15,23,42,0.4)] backdrop-blur-xl"
           >
-            {/* 装饰线条：增加 Antigravity 科技感 */}
-            <div className="absolute inset-x-10 z-30 w-[20%] -bottom-px bg-gradient-to-r from-transparent via-emerald-500 to-transparent h-px " />
-            <div className="absolute left-10 w-[40%] z-30 -bottom-px bg-gradient-to-r from-transparent via-sky-500 to-transparent h-px " />
+            <div className="absolute inset-x-10 -bottom-px z-30 h-px w-[20%] bg-gradient-to-r from-transparent via-emerald-500 to-transparent" />
+            <div className="absolute left-10 -bottom-px z-30 h-px w-[40%] bg-gradient-to-r from-transparent via-sky-500 to-transparent" />
 
-            <div className="font-bold text-white relative z-30 text-sm">
+            <div className="relative z-30 text-sm font-semibold text-foreground">
               {text}
             </div>
           </motion.div>

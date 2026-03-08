@@ -39,6 +39,7 @@
 //! }
 //! ```
 
+use crate::AppState;
 use actix::{Actor, ActorContext, Addr, AsyncContext, Handler, Message, StreamHandler};
 use actix_web::{web, HttpRequest, HttpResponse};
 use actix_web_actors::ws;
@@ -49,6 +50,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use uuid::Uuid;
+
+const SESSION_HEADER: &str = "x-antigravity-session";
+
+#[derive(Deserialize)]
+pub struct WsAuthQuery {
+    token: Option<String>,
+}
 
 // =============================================================================
 // 常量配置
@@ -428,7 +436,24 @@ impl Handler<TextMessage> for WsSession {
 pub async fn ws_handler(
     req: HttpRequest,
     stream: web::Payload,
+    state: web::Data<AppState>,
+    query: web::Query<WsAuthQuery>,
 ) -> Result<HttpResponse, actix_web::Error> {
+    let expected_token = {
+        let inner = state.inner.lock();
+        inner.server_session_token.clone()
+    };
+    let provided_token = req
+        .headers()
+        .get(SESSION_HEADER)
+        .and_then(|value| value.to_str().ok())
+        .map(str::to_owned)
+        .or_else(|| query.token.clone());
+
+    if provided_token.as_deref() != Some(expected_token.as_str()) {
+        return Ok(HttpResponse::Unauthorized().finish());
+    }
+
     tracing::info!("新的 WebSocket 连接请求");
     ws::start(WsSession::new(), &req, stream)
 }

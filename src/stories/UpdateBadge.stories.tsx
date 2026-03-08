@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import UpdateBadge from '@/components/business/UpdateBadge.tsx';
 import type { UpdateInfo } from '@/services/updateService.ts';
 

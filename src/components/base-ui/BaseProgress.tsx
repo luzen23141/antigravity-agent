@@ -36,30 +36,30 @@ const BaseProgress = React.forwardRef<HTMLDivElement, BaseProgressProps>(
     };
 
     const variantClasses = {
-      default: 'bg-blue-500',
-      success: 'bg-green-500',
-      warning: 'bg-yellow-500',
-      danger: 'bg-red-500',
+      default: 'bg-primary',
+      success: 'bg-emerald-500',
+      warning: 'bg-amber-500',
+      danger: 'bg-destructive',
     };
 
     return (
       <div ref={ref} className={cn('w-full', className)} {...props}>
         <div
           className={cn(
-            'w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden',
+            'w-full overflow-hidden rounded-full border border-border/70 bg-muted/70',
             sizeClasses[size]
           )}
         >
           <div
             className={cn(
-              'h-full transition-all duration-300 ease-out rounded-full',
+              'h-full rounded-full transition-all duration-300 ease-out shadow-sm',
               variantClasses[variant]
             )}
             style={{ width: `${percentage}%` }}
           />
         </div>
         {showLabel && (
-          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <div className="mt-1 flex justify-between text-sm text-muted-foreground">
             <span>{value}</span>
             <span>{max}</span>
           </div>

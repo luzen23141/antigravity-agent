@@ -1,12 +1,77 @@
 
 
-// 检测是否在 VS Code 扩展环境中运行
-// 我们可以通过检查是否存在 __TAURI__ 对象来判断，或者使用环境变量
-// 假设 VS Code 扩展会注入一个特定的全局变量或者我们构建时设置 VITE_ENV
-const isExtension = !('__TAURI_INTERNALS__' in window) && !('__TAURI__' in window); // 简单的启发式检查
-
 // 本地服务器地址 (与 main.rs 中配置的一致)
 const SERVER_URL = 'http://127.0.0.1:56789/api';
+const SESSION_HEADER = 'x-antigravity-session';
+const SESSION_STORAGE_KEY = 'antigravity.session-token';
+const TOKEN_COMMAND = 'get_server_session_token';
+
+function unwrapResponse<T>(payload: unknown): T {
+  if (payload === null || payload === undefined) {
+    return payload as T;
+  }
+
+  if (Array.isArray(payload)) {
+    return payload as T;
+  }
+
+  if (typeof payload !== 'object') {
+    return payload as T;
+  }
+
+  const record = payload as Record<string, unknown>;
+
+  if (typeof record.error === 'string') {
+    throw new Error(record.error);
+  }
+
+  if ('value' in record) {
+    return record.value as T;
+  }
+
+  if ('result' in record) {
+    return record.result as T;
+  }
+
+  if ('message' in record && Object.keys(record).length <= 2) {
+    return record.message as T;
+  }
+
+  if ('language' in record && Object.keys(record).length === 1) {
+    return record.language as T;
+  }
+
+  if ('valid' in record && Object.keys(record).length === 1) {
+    return record.valid as T;
+  }
+
+  if ('success' in record && Object.keys(record).length === 1) {
+    return record.success as T;
+  }
+
+  return payload as T;
+}
+
+async function getSessionToken(): Promise<string> {
+  const cached = window.sessionStorage.getItem(SESSION_STORAGE_KEY);
+  if (cached) {
+    return cached;
+  }
+
+  const response = await fetch(`${SERVER_URL}/${TOKEN_COMMAND}`);
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP Error ${response.status}: ${errorText}`);
+  }
+
+  const token = unwrapResponse<string>(await response.json());
+  if (!token) {
+    throw new Error('Missing server session token');
+  }
+
+  window.sessionStorage.setItem(SESSION_STORAGE_KEY, token);
+  return token;
+}
 
 /**
  * 通用命令调用适配器
@@ -59,7 +124,7 @@ const IGNORED_COMMANDS = new Set<string>([
  * HTTP 调用实现
  * 直接使用命令名作为路由路径，参数透传
  */
-async function httpInvoke<T>(cmd: string, args?: Record<string, any>): Promise<T> {
+async function httpInvoke<T>(cmd: string, args?: any): Promise<T> {
   // 处理忽略的命令
   if (IGNORED_COMMANDS.has(cmd)) {
     if (cmd === 'write_frontend_log') {
@@ -74,11 +139,17 @@ async function httpInvoke<T>(cmd: string, args?: Record<string, any>): Promise<T
   const url = `${SERVER_URL}/${cmd}`;
   const method = POST_COMMANDS.has(cmd) ? 'POST' : 'GET';
 
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+
+  if (cmd !== TOKEN_COMMAND) {
+    headers[SESSION_HEADER] = await getSessionToken();
+  }
+
   const options: RequestInit = {
     method,
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers,
   };
 
   // POST 请求透传参数
@@ -92,7 +163,7 @@ async function httpInvoke<T>(cmd: string, args?: Record<string, any>): Promise<T
       const errorText = await response.text();
       throw new Error(`HTTP Error ${response.status}: ${errorText}`);
     }
-    return await response.json();
+    return unwrapResponse<T>(await response.json());
   } catch (error) {
     console.error(`HTTP Invoke failed for ${cmd}:`, error);
     throw error;

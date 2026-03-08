@@ -29,6 +29,7 @@ const defaultQuotas: AccountAdditionData = {
   claudeQuoteRestIn: '2025-12-21T10:50:06Z',
   userAvatar: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Default',
   userId: 'mock_default',
+  projectId: 'mock_project_default',
 };
 
 const baseMockAccounts: BaseMockAccount[] = [
@@ -208,6 +209,8 @@ function makeSessionItem(
     apiKey: `sk_${local}`,
     accessToken: `ya29.mock_access_token_${local}`,
     refreshToken: `1//mock_refresh_token_${local}`,
+    projectId: addition.projectId,
+    expiresIn: null,
     persisted: true,
   };
 }
@@ -246,6 +249,8 @@ const longEmailItem: AccountSessionListAccountItem = {
   apiKey: 'sk_mock_long_email',
   accessToken: 'ya29.mock_access_token_long_email',
   refreshToken: '1//mock_refresh_token_long_email',
+  projectId: 'mock_project_long_email',
+  expiresIn: null,
   persisted: true,
 };
 

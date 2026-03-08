@@ -1,5 +1,5 @@
 import React from 'react';
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import AccountsListToolbar, { type ListToolbarValue } from '@/components/business/AccountsListToolbar.tsx';
 
 const StatefulToolbar: React.FC<{ total: number; initial?: Partial<ListToolbarValue> }> = ({

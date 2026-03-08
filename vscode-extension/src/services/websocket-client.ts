@@ -48,6 +48,36 @@
 
 import * as vscode from 'vscode';
 import { Logger } from '../utils/logger';
+import { API_CONFIG } from '../constants/api';
+
+let sessionTokenPromise: Promise<string> | null = null;
+
+async function getSessionToken(): Promise<string> {
+    if (!sessionTokenPromise) {
+        sessionTokenPromise = fetch(`${API_CONFIG.BASE_URL}/${API_CONFIG.ENDPOINTS.GET_SERVER_SESSION_TOKEN}`)
+            .then(async (response) => {
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch session token: ${response.status}`);
+                }
+
+                const payload = await response.json() as { result?: string; error?: string };
+                if (payload.error) {
+                    throw new Error(payload.error);
+                }
+                if (!payload.result) {
+                    throw new Error('Missing session token');
+                }
+
+                return payload.result;
+            })
+            .catch((error) => {
+                sessionTokenPromise = null;
+                throw error;
+            });
+    }
+
+    return sessionTokenPromise;
+}
 
 // =============================================================================
 // 常量配置
@@ -193,28 +223,40 @@ export class WebSocketClient {
         Logger.log('🔌 正在连接 WebSocket...');
 
         try {
-            this.ws = new WebSocket(WS_URL);
+            void getSessionToken()
+                .then((sessionToken) => {
+                    if (this.disposed) {
+                        return;
+                    }
 
-            this.ws.onopen = () => {
-                this.isConnecting = false;
-                Logger.log('✅ WebSocket 连接成功');
-                this.clearReconnectTimer();
-            };
+                    this.ws = new WebSocket(`${WS_URL}?token=${encodeURIComponent(sessionToken)}`);
 
-            this.ws.onclose = (event) => {
-                this.isConnecting = false;
-                Logger.log(`WebSocket 连接关闭: ${event.code} ${event.reason}`);
-                this.scheduleReconnect();
-            };
+                    this.ws.onopen = () => {
+                        this.isConnecting = false;
+                        Logger.log('✅ WebSocket 连接成功');
+                        this.clearReconnectTimer();
+                    };
 
-            this.ws.onerror = (error) => {
-                this.isConnecting = false;
-                Logger.log(`WebSocket 错误: ${error}`);
-            };
+                    this.ws.onclose = (event) => {
+                        this.isConnecting = false;
+                        Logger.log(`WebSocket 连接关闭: ${event.code} ${event.reason}`);
+                        this.scheduleReconnect();
+                    };
 
-            this.ws.onmessage = (event) => {
-                this.handleMessage(event.data);
-            };
+                    this.ws.onerror = (error) => {
+                        this.isConnecting = false;
+                        Logger.log(`WebSocket 错误: ${error}`);
+                    };
+
+                    this.ws.onmessage = (event) => {
+                        this.handleMessage(event.data);
+                    };
+                })
+                .catch((error) => {
+                    this.isConnecting = false;
+                    Logger.log(`WebSocket 连接失败: ${error}`);
+                    this.scheduleReconnect();
+                });
         } catch (error) {
             this.isConnecting = false;
             Logger.log(`WebSocket 连接失败: ${error}`);

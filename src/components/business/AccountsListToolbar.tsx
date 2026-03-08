@@ -11,7 +11,7 @@ import { LanguageDropdown } from '@/components/business/LanguageDropdown.tsx';
 import { useAntigravityAccount } from '@/modules/use-antigravity-account.ts';
 import { AccountTriggerCommands } from '@/commands/AccountTriggerCommands.ts';
 import toast from 'react-hot-toast';
-import { RefreshCw, Flame } from "lucide-react";
+import { Flame } from "lucide-react";
 
 export type ListSortKey = 'name' | 'claude' | 'gemini-pro' | 'gemini-flash' | 'gemini-image' | 'tier';
 export type ListToolbarValue = {
@@ -38,15 +38,15 @@ const useTierUiMap = () => {
   return React.useMemo<Record<UserTier, { label: string; accentClass: string }>>(() => ({
     'free-tier': {
       label: t('tier.free'),
-      accentClass: 'text-slate-900 dark:text-slate-50',
+      accentClass: 'text-foreground',
     },
     'g1-pro-tier': {
       label: t('tier.pro'),
-      accentClass: 'text-amber-700 dark:text-amber-300',
+      accentClass: 'text-amber-600 dark:text-amber-300',
     },
     'g1-ultra-tier': {
       label: t('tier.ultra'),
-      accentClass: 'text-violet-700 dark:text-violet-300',
+      accentClass: 'text-violet-600 dark:text-violet-300',
     },
   }), [t]);
 };
@@ -98,13 +98,12 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
     setIsRefreshing(true);
     const toastId = toast.loading(t('toolbar.refreshingQuota'));
     let triggeredCount = 0;
-    let successAccountCount = 0;
 
     try {
       // Run in parallel chunks or serial? Serial is safer for Rate Limits if any.
       // But user wants speed. Let's do batches of 3.
-      const chunk = (arr: any[], size: number) =>
-        Array.from({ length: Math.ceil(arr.length / size) }, (v, i) =>
+      const chunk = (arr: typeof accounts, size: number) =>
+        Array.from({ length: Math.ceil(arr.length / size) }, (_, i) =>
           arr.slice(i * size, i * size + size)
         );
 
@@ -137,7 +136,6 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
 
               if (res.triggered_models.length > 0) {
                 triggeredCount += res.triggered_models.length;
-                successAccountCount++;
               }
               return res;
             })
@@ -191,32 +189,34 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
   };
 
   const containerClasses = [
-    'flex items-center justify-between gap-3 px-3 py-2 rounded-xl border',
-    'bg-white/80 dark:bg-slate-900/60 border-slate-200 dark:border-slate-700',
-    'backdrop-blur-sm shadow-sm',
+    'app-panel relative flex flex-col gap-4 px-4 py-4 sm:px-5 lg:flex-row lg:items-start lg:justify-between',
   ];
 
   return (
     <div className={cn(...containerClasses, className)}>
-      <div>
-        <a target={"_blank"} href={"https://github.com/MonchiLin/antigravity-agent"} className="text-4xl leading-none font-semibold tracking-tighter text-balance cursor-pointer">
-          <span>Antigravity</span>
-          {/* padding 修复截断 */}
-          <LineShadowText className={"pr-2 pb-1"}>Agent</LineShadowText>
+      <div className="min-w-0 space-y-2">
+        <a
+          target={"_blank"}
+          href={"https://github.com/MonchiLin/antigravity-agent"}
+          className="inline-flex max-w-full items-end gap-2 text-3xl font-semibold leading-none tracking-tight text-foreground transition-opacity hover:opacity-90 sm:text-4xl"
+        >
+          <span className="truncate">Antigravity</span>
+          <LineShadowText className={"pr-1 pb-1"}>Agent</LineShadowText>
         </a>
-        <UpdateBadge />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="app-toolbar-pill rounded-full px-2.5 py-1">
+            <span className="text-xs font-medium text-muted-foreground">
+              {t('toolbar.accounts')}
+            </span>
+            <span className="flex min-w-[24px] items-center justify-center rounded-full bg-card px-1.5 py-0.5 text-xs font-semibold text-foreground shadow-sm">
+              {total}
+            </span>
+          </div>
+          <UpdateBadge />
+        </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0">
-        <div className="inline-flex items-center w-fit rounded-full border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 p-0.5 transition-colors hover:border-slate-300 dark:hover:border-slate-600">
-          {/* 左侧：标签部分 (较弱的视觉) */}
-          <span className="px-2 py-0.5 text-xs font-medium text-slate-600 dark:text-slate-400">
-            {t('toolbar.accounts')}
-          </span>
-          <span className="flex min-w-[20px] items-center justify-center rounded-full bg-white dark:bg-slate-950 px-1.5 py-0.5 text-xs font-bold text-slate-800 dark:text-slate-200 shadow-sm">
-            {total}
-          </span>
-        </div>
+      <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 lg:justify-end">
 
         <BaseInput
           value={query}
@@ -228,21 +228,20 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
               <button
                 type="button"
                 onClick={handleClearSearch}
-                className="hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                className="text-muted-foreground transition-colors hover:text-foreground"
                 aria-label="Clear search"
               >
                 <X className="h-4 w-4" />
               </button>
             ) : undefined
           }
-          containerClassName="w-64 !space-y-0 ml-2"
-          className="py-1.5 h-8 text-sm"
+          containerClassName="w-full max-w-full !space-y-0 md:w-72 lg:w-80"
+          className="h-10 rounded-xl border-border/70 bg-input/80 py-2 text-sm shadow-none"
         />
         {/* 层次筛选：分段按钮 */}
         <div
           className={cn(
-            'flex items-center gap-0.5 p-0.5 rounded-lg border',
-            'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700'
+            'app-toolbar-pill flex-wrap p-1'
           )}
         >
           <button
@@ -251,8 +250,8 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
             className={cn(
               'px-2.5 py-1 rounded-md text-xs font-medium transition-colors',
               selectedTiers.length === 0
-                ? 'bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 shadow-sm'
-                : 'text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-900/60'
+                ? 'bg-card text-primary shadow-sm'
+                : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'
             )}
           >
             {t('toolbar.filterAll')}
@@ -268,8 +267,8 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
                 className={cn(
                   'px-2.5 py-1 rounded-md text-xs font-medium transition-colors',
                   isActive
-                    ? cn('bg-white dark:bg-slate-900 shadow-sm', accentClass)
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-white/70 dark:hover:bg-slate-900/60'
+                    ? cn('bg-card shadow-sm', accentClass)
+                    : 'text-muted-foreground hover:bg-accent/70 hover:text-foreground'
                 )}
               >
                 {label}
@@ -281,11 +280,10 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
         {/* 排序选择：紧凑胶囊 */}
         <div
           className={cn(
-            'flex items-center gap-1 h-8 px-2 rounded-lg border',
-            'bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700'
+            'app-toolbar-pill h-10 px-2'
           )}
         >
-          <ArrowUpDown className="h-3.5 w-3.5 text-slate-400" />
+          <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
           <AntSelect
             value={sortKey}
             onChange={(v) => handleSortChange(v as ListSortKey)}
@@ -304,26 +302,24 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
         </div>
 
         {/* 语言切换器：新增 */}
-        <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+        <div className="mx-1 hidden h-4 w-px bg-border sm:block" />
         <LanguageDropdown />
 
         {/* Refresh All Button */}
-        <div className="h-4 w-px bg-slate-200 dark:bg-slate-700 mx-1" />
+        <div className="mx-1 hidden h-4 w-px bg-border sm:block" />
         <Tooltip
           title={<div className="whitespace-pre-wrap text-xs">{t('toolbar.refreshQuotaTooltip')}</div>}
-          overlayStyle={{ maxWidth: 300 }}
         >
           <button
             onClick={handleRefreshAll}
             disabled={isRefreshing}
             className={cn(
-              "p-1.5 rounded-lg border transition-colors relative group",
-              "bg-slate-50 dark:bg-slate-800/60 border-slate-200 dark:border-slate-700",
-              "hover:bg-white dark:hover:bg-slate-700",
+              "app-toolbar-pill h-10 w-10 justify-center rounded-xl p-0 transition-colors relative",
+              "hover:bg-accent/70",
               isRefreshing ? "cursor-not-allowed opacity-70" : "cursor-pointer"
             )}
           >
-            <Flame className={cn("h-4 w-4 text-amber-600 dark:text-amber-500", isRefreshing && "animate-pulse")} />
+            <Flame className={cn("h-4 w-4 text-amber-500", isRefreshing && "animate-pulse")} />
           </button>
         </Tooltip>
       </div>

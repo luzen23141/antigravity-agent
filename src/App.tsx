@@ -1,5 +1,5 @@
 import "./lib/dayjs-setup"
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDevToolsShortcut } from './hooks/use-devTools-shortcut.ts';
 import { useAntigravityAccount } from './modules/use-antigravity-account.ts';
 import { DATABASE_EVENTS, useDbMonitoringStore } from './modules/db-monitoring-store';
@@ -75,14 +75,15 @@ function App() {
   // ========== 渲染逻辑 ==========
   if (isDetecting) {
     return (
-      <div
-        className="flex items-center justify-center min-h-screen from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 mx-auto mb-6 text-blue-500"></div>
-          <h2 className="text-2xl font-semibold mb-2 text-gray-800 dark:text-gray-100">
+      <div className="app-shell flex min-h-screen items-center justify-center px-6">
+        <div className="app-panel w-full max-w-md p-10 text-center">
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full border border-border/70 bg-background/80 shadow-sm">
+            <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-primary/20 border-t-primary" />
+          </div>
+          <h2 className="mb-2 text-2xl font-semibold tracking-tight text-foreground">
             {t('app.detecting')}
           </h2>
-          <p className="text-gray-500 dark:text-gray-400">
+          <p className="text-sm leading-6 text-muted-foreground">
             {t('app.detectingSubtitle')}
           </p>
         </div>
@@ -90,7 +91,7 @@ function App() {
     );
   }
 
-  return <>
+  return <div className="app-shell flex min-h-screen flex-col">
     <AppDock />
     <AppContent />
     <Toaster
@@ -98,7 +99,7 @@ function App() {
       reverseOrder={false}
     />
     <AppLoader />
-  </>;
+  </div>;
 }
 
 export default App;

@@ -11,7 +11,7 @@ export class AccountManageCommands {
   }
 
   static restoreBackupFiles(backups: BackupData[]): Promise<RestoreResult> {
-    return universalInvoke('restore_backup_files', { accountFileData: backups });
+    return universalInvoke('restore_backup_files', backups);
   }
 
   static deleteBackup(name: string): Promise<string> {

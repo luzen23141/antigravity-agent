@@ -12,10 +12,10 @@ import { Tooltip } from "antd";
 type BadgeVariant = 'secondary' | 'destructive' | 'success' | 'warning';
 
 const badgeVariantClasses: Record<BadgeVariant, string> = {
-  secondary: 'bg-gray-600 text-gray-100',
-  destructive: 'bg-red-600 text-white',
-  success: 'bg-green-600 text-white',
-  warning: 'bg-yellow-600 text-white',
+  secondary: 'bg-secondary text-secondary-foreground border border-border/70',
+  destructive: 'bg-destructive text-white border border-transparent',
+  success: 'bg-emerald-600 text-white border border-transparent',
+  warning: 'bg-amber-500 text-foreground border border-transparent',
 };
 
 interface InlineBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
@@ -32,7 +32,7 @@ const InlineBadge: React.FC<InlineBadgeProps> = ({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full font-medium',
+        'inline-flex items-center gap-1.5 rounded-full font-medium shadow-sm',
         badgeVariantClasses[variant],
         'px-2 py-0.5 text-xs',
         className
@@ -200,7 +200,7 @@ const UpdateBadge: React.FC<UpdateBadgeProps> = ({
         <button
           type="button"
           onClick={handleUpdateBadgeClick}
-          className={cn('ml-2 inline-flex cursor-pointer', className)}
+          className={cn('inline-flex cursor-pointer', className)}
           aria-label="Application update"
         >
           <InlineBadge

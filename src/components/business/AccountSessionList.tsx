@@ -1,5 +1,4 @@
-﻿import React from 'react';
-import { AccountSessionListCard } from './AccountSessionListCard';
+﻿import { AccountSessionListCard } from './AccountSessionListCard';
 import { motion, AnimatePresence, Variants } from 'motion/react';
 import { AnimatedGridPattern } from "@/components/ui/animated-grid-pattern.tsx";
 import { maskEmail, maskName } from "@/lib/string-masking.ts";
@@ -84,7 +83,7 @@ export function AccountSessionList({
 
   return (
     <motion.div
-      className="flex flex-row flex-1 gap-4 p-4 flex-wrap items-start content-start relative min-h-[200px]"
+      className="relative flex min-h-[420px] flex-1 flex-wrap items-start content-start gap-5 overflow-auto p-5 md:p-6"
       variants={containerVariants}
       initial="hidden"
       animate="show"
@@ -132,15 +131,15 @@ export function AccountSessionList({
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full border border-border/70 bg-muted/40 shadow-sm">
+            <svg className="h-8 w-8 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
             </svg>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+          <h3 className="mb-2 text-lg font-medium text-foreground">
             {t('emptyState.title')}
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 max-w-md leading-relaxed">
+          <p className="max-w-md text-sm leading-relaxed text-muted-foreground">
             {t('emptyState.description')}
           </p>
         </motion.div>

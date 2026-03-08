@@ -31,40 +31,90 @@ pub mod db_monitor {
     use super::*;
     use crate::db_monitor::DatabaseMonitor;
 
-    pub async fn is_running(_app: &AppHandle) -> Result<bool, String> {
-        // 智能监控现在是默认功能，总是返回 true
-        Ok(true)
+    pub async fn is_running(app: &AppHandle) -> Result<bool, String> {
+        let monitor = app.state::<Arc<DatabaseMonitor>>();
+        Ok(monitor.is_running().await)
     }
 
     pub async fn start(app: &AppHandle) -> Result<String, String> {
         let monitor = app.state::<Arc<DatabaseMonitor>>();
-        monitor.start_monitoring().await;
-        Ok("数据库监控已启动".to_string())
+        let started = monitor.start_monitoring().await;
+        Ok(if started {
+            "数据库监控已启动".to_string()
+        } else {
+            "数据库监控已在运行".to_string()
+        })
     }
 
     pub async fn stop(app: &AppHandle) -> Result<String, String> {
         let monitor = app.state::<Arc<DatabaseMonitor>>();
-        monitor.stop_monitoring().await;
-        Ok("数据库监控已停止".to_string())
+        let stopped = monitor.stop_monitoring().await;
+        Ok(if stopped {
+            "数据库监控已停止".to_string()
+        } else {
+            "数据库监控已处于停止状态".to_string()
+        })
     }
 }
 
 pub mod logging {
     use std::fs;
-    use std::path::Path;
+    use std::path::{Component, Path, PathBuf};
 
-    pub async fn write_text_file(path: String, content: String) -> Result<String, String> {
-        let file_path = Path::new(&path);
+    fn canonicalize_existing_dir(path: &Path) -> Result<PathBuf, String> {
+        std::fs::canonicalize(path).map_err(|e| format!("解析目录失败: {}", e))
+    }
 
-        // 确保父目录存在
-        if let Some(parent) = file_path.parent() {
-            fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
+    fn allowed_write_roots() -> Result<Vec<PathBuf>, String> {
+        Ok(vec![
+            canonicalize_existing_dir(&crate::directories::get_config_directory())?,
+            canonicalize_existing_dir(&crate::directories::get_log_directory())?,
+            canonicalize_existing_dir(&std::env::temp_dir())?,
+        ])
+    }
+
+    fn validate_write_path(path: &str) -> Result<PathBuf, String> {
+        let file_path = PathBuf::from(path);
+        if !file_path.is_absolute() {
+            return Err("只允许写入绝对路径文件".to_string());
         }
 
-        // 写入文件
-        fs::write(file_path, content).map_err(|e| format!("写入文件失败: {}", e))?;
+        if file_path
+            .components()
+            .any(|component| matches!(component, Component::ParentDir))
+        {
+            return Err("路径中不允许包含 ..".to_string());
+        }
 
-        Ok(format!("文件写入成功: {}", path))
+        let parent = file_path
+            .parent()
+            .ok_or_else(|| "文件路径缺少父目录".to_string())?;
+
+        fs::create_dir_all(parent).map_err(|e| format!("创建目录失败: {}", e))?;
+
+        let canonical_parent = canonicalize_existing_dir(parent)?;
+        let allowed_roots = allowed_write_roots()?;
+        let is_allowed = allowed_roots
+            .iter()
+            .any(|root| canonical_parent.starts_with(root));
+
+        if !is_allowed {
+            return Err(format!("不允许写入该目录: {}", canonical_parent.display()));
+        }
+
+        Ok(canonical_parent.join(
+            file_path
+                .file_name()
+                .ok_or_else(|| "文件名无效".to_string())?,
+        ))
+    }
+
+    pub async fn write_text_file(path: String, content: String) -> Result<String, String> {
+        let file_path = validate_write_path(&path)?;
+
+        fs::write(&file_path, content).map_err(|e| format!("写入文件失败: {}", e))?;
+
+        Ok(format!("文件写入成功: {}", file_path.display()))
     }
 
     pub async fn write_frontend_log(log_entry: serde_json::Value) -> Result<(), String> {

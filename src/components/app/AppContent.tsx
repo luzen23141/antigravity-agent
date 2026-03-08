@@ -266,21 +266,25 @@ export function AppContent() {
 
   return (
     <>
-      <section className="flex flex-col relative flex-1">
-        <AccountsListToolbar
-          tiers={condition.tiers}
-          query={condition.query}
-          sortKey={condition.sortKey}
-          total={visibleAccounts.length}
-          onChange={setCondition}
-        />
-        <AccountSessionList
-          accounts={visibleAccounts}
-          onSwitch={handleSwitchAccount}
-          onDelete={handleDeleteBackup}
-          onSelect={handleUserClick}
-          currentUserEmail={currentAntigravityAccount?.antigravity_auth_status.email}
-        />
+      <section className="relative flex flex-1 px-4 pb-28 pt-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4">
+          <AccountsListToolbar
+            tiers={condition.tiers}
+            query={condition.query}
+            sortKey={condition.sortKey}
+            total={visibleAccounts.length}
+            onChange={setCondition}
+          />
+          <div className="app-panel relative min-h-0 flex-1 overflow-hidden">
+            <AccountSessionList
+              accounts={visibleAccounts}
+              onSwitch={handleSwitchAccount}
+              onDelete={handleDeleteBackup}
+              onSelect={handleUserClick}
+              currentUserEmail={currentAntigravityAccount?.antigravity_auth_status.email}
+            />
+          </div>
+        </div>
       </section>
 
       <BusinessUserDetail
