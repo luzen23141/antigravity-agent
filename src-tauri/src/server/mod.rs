@@ -6,19 +6,47 @@ use serde_json::json;
 mod middleware;
 pub mod websocket;
 
-const ALLOWED_ORIGIN_PREFIXES: &[&str] = &[
+const ALLOWED_EXACT_ORIGINS: &[&str] = &[
     "tauri://localhost",
     "http://tauri.localhost",
     "https://tauri.localhost",
-    "vscode-webview://",
-    "http://127.0.0.1",
-    "http://localhost",
 ];
 
-fn is_allowed_origin(origin: &str) -> bool {
-    ALLOWED_ORIGIN_PREFIXES
-        .iter()
-        .any(|allowed| origin == *allowed || origin.starts_with(allowed))
+const ALLOWED_LOOPBACK_HOSTS: &[&str] = &["127.0.0.1", "localhost"];
+
+pub(super) fn is_allowed_origin(origin: &str) -> bool {
+    if ALLOWED_EXACT_ORIGINS.contains(&origin) {
+        return true;
+    }
+
+    if origin.starts_with("vscode-webview://") {
+        return true;
+    }
+
+    let Ok(uri) = origin.parse::<actix_web::http::Uri>() else {
+        return false;
+    };
+
+    let Some(scheme) = uri.scheme_str() else {
+        return false;
+    };
+
+    if !matches!(scheme, "http" | "https") {
+        return false;
+    }
+
+    let Some(host) = uri.host() else {
+        return false;
+    };
+
+    if !ALLOWED_LOOPBACK_HOSTS.contains(&host) {
+        return false;
+    }
+
+    match uri.path_and_query() {
+        Some(path_and_query) => matches!(path_and_query.as_str(), "" | "/"),
+        None => true,
+    }
 }
 
 
