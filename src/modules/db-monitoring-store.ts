@@ -16,6 +16,7 @@ export type { DatabaseEventMap, DatabaseEventListener };
 
 const databaseEventEmitter = new EventEmitter();
 let globalUnlistenFn: UnlistenFn | null = null;
+let startPromise: Promise<void> | null = null;
 
 export const DATABASE_EVENTS = {
   DATA_CHANGED: 'database:data-changed',
@@ -53,45 +54,69 @@ function normalizeDatabasePayload(payload: any) {
 }
 
 export const useDbMonitoringStore = create<DbMonitoringActions>()(
-  (_set, get) => ({
+  (_set) => ({
       start: async (): Promise<void> => {
-        logger.info('初始化数据库监控', { module: 'DbMonitoringStore' });
+        if (startPromise) {
+          return startPromise;
+        }
 
-        try {
-          await get().stop();
+        startPromise = (async () => {
+          logger.info('初始化数据库监控', { module: 'DbMonitoringStore' });
 
-          const handleDatabaseChange = async (event: any) => {
-            logger.info('接收到数据库变化事件', {
-              module: 'DbMonitoringStore',
-              eventId: event.id || 'unknown'
-            });
+          try {
+            if (!globalUnlistenFn) {
+              const handleDatabaseChange = async (event: any) => {
+                logger.info('接收到数据库变化事件', {
+                  module: 'DbMonitoringStore',
+                  eventId: event.id || 'unknown'
+                });
 
-            const { newData, oldData, diff } = normalizeDatabasePayload(event.payload);
+                const { newData, oldData, diff } = normalizeDatabasePayload(event.payload);
 
-            databaseEventEmitter.emit(DATABASE_EVENTS.DATA_CHANGED, {
-              timestamp: Date.now(),
-              newData,
-              oldData,
-              diff,
-              originalEvent: event
-            });
+                databaseEventEmitter.emit(DATABASE_EVENTS.DATA_CHANGED, {
+                  timestamp: Date.now(),
+                  newData,
+                  oldData,
+                  diff,
+                  originalEvent: event
+                });
 
-            logger.info('数据库变化事件已发射', {
+                logger.info('数据库变化事件已发射', {
+                  module: 'DbMonitoringStore'
+                });
+              };
+
+              globalUnlistenFn = await listen('database-changed', handleDatabaseChange);
+            }
+
+            await DbMonitorCommands.start();
+
+            logger.info('数据库监控已启动', {
               module: 'DbMonitoringStore'
             });
-          };
+          } catch (error) {
+            if (globalUnlistenFn) {
+              try {
+                globalUnlistenFn();
+              } catch {
+                // noop
+              } finally {
+                globalUnlistenFn = null;
+              }
+            }
 
-          globalUnlistenFn = await listen('database-changed', handleDatabaseChange);
-          await DbMonitorCommands.start();
+            logger.error('启动数据库监控失败', {
+              module: 'DbMonitoringStore',
+              error: error instanceof Error ? error.message : String(error)
+            });
+            throw error;
+          }
+        })();
 
-          logger.info('数据库监控已启动', {
-            module: 'DbMonitoringStore'
-          });
-        } catch (error) {
-          logger.error('启动数据库监控失败', {
-            module: 'DbMonitoringStore',
-            error: error instanceof Error ? error.message : String(error)
-          });
+        try {
+          await startPromise;
+        } finally {
+          startPromise = null;
         }
       },
 
@@ -108,7 +133,6 @@ export const useDbMonitoringStore = create<DbMonitoringActions>()(
         if (globalUnlistenFn) {
           try {
             globalUnlistenFn();
-            globalUnlistenFn = null;
             logger.info('数据库监听器已清理', {
               module: 'DbMonitoringStore'
             });
@@ -117,6 +141,8 @@ export const useDbMonitoringStore = create<DbMonitoringActions>()(
               module: 'DbMonitoringStore',
               error: error instanceof Error ? error.message : String(error)
             });
+          } finally {
+            globalUnlistenFn = null;
           }
         }
       },

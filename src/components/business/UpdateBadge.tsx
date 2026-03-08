@@ -103,7 +103,6 @@ const UpdateBadge: React.FC<UpdateBadgeProps> = ({
   const handleStartDownload = async () => {
     try {
       await startDownload();
-      toast.success(t('toast.downloadComplete'));
     } catch (error) {
       // 只在控制台打印错误，不提示用户
       logger.error('下载失败', {
