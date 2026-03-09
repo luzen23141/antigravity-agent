@@ -4,7 +4,6 @@ import { cn } from '@/lib/utils.ts';
 import { BaseInput } from '@/components/base-ui/BaseInput';
 import type { UserTier } from '@/modules/use-account-addition-data.ts';
 import { Select as AntSelect, Tooltip } from 'antd';
-import { LineShadowText } from "@/components/ui/line-shadow-text.tsx";
 import UpdateBadge from "@/components/business/UpdateBadge.tsx";
 import { useTranslation } from 'react-i18next';
 import { LanguageDropdown } from '@/components/business/LanguageDropdown.tsx';
@@ -195,14 +194,6 @@ const AccountsListToolbar: React.FC<BusinessListToolbarProps> = ({
   return (
     <div className={cn(...containerClasses, className)}>
       <div className="min-w-0 space-y-2">
-        <a
-          target={"_blank"}
-          href={"https://github.com/MonchiLin/antigravity-agent"}
-          className="inline-flex max-w-full items-end gap-2 text-3xl font-semibold leading-none tracking-tight text-foreground transition-opacity hover:opacity-90 sm:text-4xl"
-        >
-          <span className="truncate">Antigravity</span>
-          <LineShadowText className={"pr-1 pb-1"}>Agent</LineShadowText>
-        </a>
         <div className="flex flex-wrap items-center gap-2">
           <div className="app-toolbar-pill rounded-full px-2.5 py-1">
             <span className="text-xs font-medium text-muted-foreground">

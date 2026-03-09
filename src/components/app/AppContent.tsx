@@ -235,8 +235,8 @@ export function AppContent() {
 
   return (
     <>
-      <section className="relative flex flex-1 px-4 pb-28 pt-4 sm:px-6 lg:px-8">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4">
+      <section className="relative flex flex-1 px-2 pb-24 pt-2 sm:px-3">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-2">
           <AccountsListToolbar
             tiers={condition.tiers}
             query={condition.query}

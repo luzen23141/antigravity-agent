@@ -204,7 +204,7 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
         <div className="h-px bg-border/80" />
 
         <div className="space-y-1">
-          <a target={"_blank"} href={"https://github.com/MonchiLin/antigravity-agent/issues"}>{t('links.issues')}</a>
+          <a target={"_blank"} href={"https://github.com/luzen23141/antigravity-agent/issues"}>{t('links.issues')}</a>
         </div>
 
       </div>

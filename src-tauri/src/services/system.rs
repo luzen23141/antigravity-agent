@@ -328,6 +328,17 @@ pub mod extension {
             temp_path
         );
 
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = std::fs::metadata(&target_exe)
+                .map_err(|e| format!("读取可执行文件权限失败: {}", e))?
+                .permissions();
+            perms.set_mode(perms.mode() | 0o111);
+            std::fs::set_permissions(&target_exe, perms)
+                .map_err(|e| format!("设置执行权限失败: {}", e))?;
+        }
+
         let install_output = Command::new(&target_exe)
             .arg("--install-extension")
             .arg(&temp_path)

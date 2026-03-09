@@ -190,7 +190,7 @@ async fn refresh_quota(
     };
 
     match crate::services::account::trigger_quota_refresh(&config_dir, req.email.clone()).await {
-        Ok(result) => HttpResponse::Ok().json(result),
+        Ok(result) => HttpResponse::Ok().json(json!({ "data": result })),
         Err(e) => HttpResponse::InternalServerError().json(json!({ "error": e })),
     }
 }
