@@ -70,14 +70,6 @@ jobs:
             arch: aarch64
             runs-on: macos-latest
             target: aarch64-apple-darwin
-          - platform: macos-latest
-            arch: x86_64
-            runs-on: macos-latest
-            target: x86_64-apple-darwin
-          - platform: ubuntu-22.04
-            arch: x86_64
-            runs-on: ubuntu-22.04
-            target: x86_64-unknown-linux-gnu
           - platform: windows-latest
             arch: x86_64
             runs-on: windows-latest
@@ -238,19 +230,6 @@ jobs:
             fi
           fi
 
-          # Linux
-          if [ "$PLATFORM" = "ubuntu-22.04" ]; then
-            if [ -d "$BUNDLE_DIR/deb" ]; then
-              (
-                cd "$BUNDLE_DIR/deb/"
-                for file in *.deb; do
-                  if [ -f "$file" ]; then
-                    rename_with_sig "$file" "antigravity-agent${AG_LINUX_MID}_amd64.deb"
-                  fi
-                done
-              )
-            fi
-          fi
 
       - name: Create Windows Portable Version
         if: matrix.platform == 'windows-latest'
@@ -293,76 +272,9 @@ jobs:
 
           find "$BUNDLE_DIR" -type f \( \
             -name "*.msi" -o -name "*.exe" -o -name "*.zip" -o \
-            -name "*.deb" -o \
             -name "*.sig" -o -name "*.dmg" -o -name "*.app.tar.gz" \
           \) | while IFS= read -r file; do
             echo "Uploading: $file"
             gh release upload "$TAG" "$file" --clobber --repo "$REPO"
           done
 
-  build-flatpak:
-    needs: build
-    runs-on: ubuntu-latest
-    container:
-      image: ghcr.io/flathub-infra/flatpak-github-actions:gnome-48
-      options: --privileged
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ inputs.ref != '' && inputs.ref || github.ref }}
-
-      - name: Download .deb from Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ inputs.tag }}
-        run: |
-          gh release download "$TAG" \
-            --pattern "*_amd64.deb" \
-            --dir .github/flatpak \
-            --repo "${{ github.repository }}" \
-            --clobber
-
-          mv .github/flatpak/*_amd64.deb .github/flatpak/antigravity-agent.deb
-
-          echo "Downloaded and renamed .deb:"
-          ls -la .github/flatpak/
-
-      - name: Build Flatpak
-        run: |
-          flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
-          flatpak install -y flathub org.gnome.Sdk//48 || true
-          flatpak install -y flathub org.gnome.Platform//48 || true
-
-          flatpak-builder \
-            --force-clean \
-            --disable-rofiles-fuse \
-            --repo=repo \
-            --install-deps-from=flathub \
-            build-dir \
-            .github/flatpak/com.antigravity_agent.app.yml
-
-          flatpak build-bundle repo antigravity-agent.flatpak com.antigravity_agent.app
-
-      - name: Rename Flatpak Bundle
-        env:
-          VERSION: ${{ inputs.version }}
-          TAG: ${{ inputs.tag }}
-        run: |
-          FINAL_VERSION="${VERSION}"
-
-          if [ -z "$FINAL_VERSION" ]; then
-             FINAL_NAME="antigravity-agent_amd64.flatpak"
-          else
-             FINAL_NAME="antigravity-agent_${FINAL_VERSION}_amd64.flatpak"
-          fi
-
-          mv antigravity-agent.flatpak "$FINAL_NAME"
-          echo "FINAL_FLATPAK_NAME=$FINAL_NAME" >> $GITHUB_ENV
-
-      - name: Upload Flatpak to Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TAG: ${{ inputs.tag }}
-        run: |
-          gh release upload "$TAG" "${{ env.FINAL_FLATPAK_NAME }}" --clobber --repo "${{ github.repository }}"
