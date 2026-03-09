@@ -21,6 +21,12 @@ pub(super) fn is_allowed_origin(origin: &str) -> bool {
         return true;
     }
 
+    // Dev mode: allow Vite dev server
+    #[cfg(debug_assertions)]
+    if origin == "http://localhost:1420" {
+        return true;
+    }
+
     if origin.starts_with("vscode-webview://") {
         return true;
     }
