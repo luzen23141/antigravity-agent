@@ -157,6 +157,11 @@ where
                 return Ok(req.into_response(response).map_into_right_body());
             }
 
+            if req.method() == actix_web::http::Method::OPTIONS {
+                let res = svc.call(req).await?.map_into_left_body();
+                return Ok(res);
+            }
+
             if requires_session_token(req.path()) {
                 let Some(app_state) = req.app_data::<web::Data<AppState>>() else {
                     let response = HttpResponse::InternalServerError()

@@ -86,7 +86,7 @@ export const ImportPasswordDialog: React.FC<ImportPasswordDialogProps> = ({
             onClick={handleClose}
             className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-background/80 px-4 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-accent"
           >
-            {t('common.cancel', { defaultValue: 'Cancel' })}
+            {t('import.cancelButton')}
           </button>
           <button
             type="button"
