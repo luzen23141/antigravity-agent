@@ -58,7 +58,7 @@ export function AccountSessionList({
 
   return (
     <motion.div
-      className="relative grid min-h-[420px] flex-1 auto-rows-max grid-cols-[repeat(auto-fill,minmax(272px,1fr))] content-start gap-3 overflow-auto p-3 md:p-4"
+      className="relative grid min-h-[420px] flex-1 auto-rows-max grid-cols-[repeat(auto-fill,minmax(300px,1fr))] content-start gap-3 overflow-auto p-3 md:p-4"
       variants={containerVariants}
       initial="hidden"
       animate="show"
