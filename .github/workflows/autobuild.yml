@@ -50,7 +50,7 @@ jobs:
             ---
             ## 📥 下载安装
 
-            ⚠️ **注意**：这是自动构建的测试版本，可能不稳定。建议普通用户使用 [正式发布版本](https://github.com/MonchiLin/antigravity-agent/releases/latest)。
+            ⚠️ **注意**：这是自动构建的测试版本，可能不稳定。建议普通用户使用 [正式发布版本](https://github.com/luzen23141/antigravity-agent/releases/latest)。
 
             ### VS Code 插件
             - [VSIX安装包 (Nightly)](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/antigravity-agent-nightly.vsix)
@@ -65,7 +65,7 @@ jobs:
             - [Flatpak](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/antigravity-agent_amd64.flatpak) | [Deb安装包](${{ github.server_url }}/${{ github.repository }}/releases/download/autobuild/antigravity-agent_amd64.deb)
             ---
 
-            🐛 如果发现问题或者需求请求，请[提交 Issue](https://github.com/MonchiLin/antigravity-agent/issues/new)
+            🐛 如果发现问题或者需求请求，请[提交 Issue](https://github.com/luzen23141/antigravity-agent/issues/new)
           prerelease: true
           draft: false
         env:

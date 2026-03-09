@@ -1,4 +1,4 @@
-import { universalInvoke } from '@/lib/invoke-adapter';
+import { invokeCommand } from '@/lib/invoke-adapter';
 
 /**
  * 数据库监控命令
@@ -9,7 +9,7 @@ export class DbMonitorCommands {
    * @returns 是否正在运行
    */
   static async isRunning(): Promise<boolean> {
-    return universalInvoke('is_database_monitoring_running');
+    return invokeCommand('is_database_monitoring_running');
   }
 
   /**
@@ -17,7 +17,7 @@ export class DbMonitorCommands {
    * @returns 启动结果消息
    */
   static async start(): Promise<string> {
-    return universalInvoke('start_database_monitoring');
+    return invokeCommand('start_database_monitoring');
   }
 
   /**
@@ -25,6 +25,6 @@ export class DbMonitorCommands {
    * @returns 停止结果消息
    */
   static async stop(): Promise<string> {
-    return universalInvoke('stop_database_monitoring');
+    return invokeCommand('stop_database_monitoring');
   }
 }

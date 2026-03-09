@@ -1,6 +1,6 @@
 use super::storage::{
     backup_file_modified_time, list_backup_json_files, load_current_raw_account_fields,
-    parse_backup_file, write_backup_file, RawAccountFields,
+    parse_backup_file, resolve_backup_file_path, write_backup_file, RawAccountFields,
 };
 use super::types::{
     decode_oauth_token_to_struct, decode_user_status_to_struct, parse_auth_status_to_value,
@@ -121,8 +121,7 @@ pub async fn clear_all_data() -> Result<CommandResult, String> {
 
 pub async fn restore(account_name: String) -> Result<CommandResult, String> {
     tracing::info!(account_name = %account_name, "Restoring account backup");
-    let account_file =
-        crate::directories::get_accounts_directory().join(format!("{account_name}.json"));
+    let account_file = resolve_backup_file_path(&account_name)?;
 
     let restore_message =
         crate::antigravity::restore::save_antigravity_account_to_file(account_file)
@@ -150,8 +149,7 @@ pub async fn switch(account_name: String) -> Result<CommandResult, String> {
         .await
         .map_err(|e| format!("Failed to clear Antigravity data before switch: {e}"))?;
 
-    let account_file =
-        crate::directories::get_accounts_directory().join(format!("{account_name}.json"));
+    let account_file = resolve_backup_file_path(&account_name)?;
     let restore_message =
         crate::antigravity::restore::save_antigravity_account_to_file(account_file)
             .await

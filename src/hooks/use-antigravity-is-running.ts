@@ -33,7 +33,7 @@ interface AntigravityIsRunningActions {
 const listeners = new Set<(isRunning: boolean) => void>();
 
 // 全局定时器 ID
-let checkIntervalId: NodeJS.Timeout | null = null;
+let checkIntervalId: ReturnType<typeof setInterval> | null = null;
 
 // 检查间隔（5 秒）
 const CHECK_INTERVAL = 5000;

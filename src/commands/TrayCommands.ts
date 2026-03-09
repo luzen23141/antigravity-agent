@@ -1,4 +1,4 @@
-import { universalInvoke } from '@/lib/invoke-adapter';
+import { invokeCommand } from '@/lib/invoke-adapter';
 import type { TrayMenuLabels } from './types/tray.types';
 
 /**
@@ -10,7 +10,7 @@ export class TrayCommands {
    * @returns 最小化结果消息
    */
   static async minimize(): Promise<string> {
-    return universalInvoke('minimize_to_tray');
+    return invokeCommand('minimize_to_tray');
   }
 
   /**
@@ -18,7 +18,7 @@ export class TrayCommands {
    * @returns 恢复结果消息
    */
   static async restore(): Promise<string> {
-    return universalInvoke('restore_from_tray');
+    return invokeCommand('restore_from_tray');
   }
 
 
@@ -29,6 +29,6 @@ export class TrayCommands {
    * @returns 更新结果消息
    */
   static async updateMenu(accounts: string[], labels?: TrayMenuLabels): Promise<string> {
-    return universalInvoke('update_tray_menu_command', { accounts, labels });
+    return invokeCommand('update_tray_menu_command', { accounts, labels });
   }
 }

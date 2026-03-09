@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { Bug, EyeOff, FileCode, FolderOpen, Monitor, Settings, VolumeX } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { getVersion } from '@tauri-apps/api/app';
@@ -6,7 +7,10 @@ import { BaseButton } from '@/components/base-ui/BaseButton';
 import { cn } from '@/lib/utils.ts';
 import { PlatformCommands } from "@/commands/PlatformCommands.ts";
 import { Modal } from "antd";
-import { useAppSettings } from "@/modules/use-app-settings.ts";
+import {
+  selectAppSettingsDialogState,
+  useAppSettings,
+} from "@/modules/use-app-settings.ts";
 import { LoggingCommands } from "@/commands/LoggingCommands.ts";
 import { useTranslation } from 'react-i18next';
 
@@ -27,17 +31,17 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
 
 
   // 应用设置（统一管理）
-  const systemTrayEnabled = useAppSettings(state => state.systemTrayEnabled);
-  const silentStartEnabled = useAppSettings(state => state.silentStartEnabled);
-  const debugMode = useAppSettings(state => state.debugMode);
-  const privateMode = useAppSettings(state => state.privateMode);
-
-  const setSystemTrayEnabled = useAppSettings(state => state.setSystemTrayEnabled);
-  const setSilentStartEnabled = useAppSettings(state => state.setSilentStartEnabled);
-  const setDebugMode = useAppSettings(state => state.setDebugMode);
-  const setPrivateMode = useAppSettings(state => state.setPrivateMode);
-
-  const loading = useAppSettings(state => state.loading);
+  const {
+    systemTrayEnabled,
+    silentStartEnabled,
+    debugMode,
+    privateMode,
+    setSystemTrayEnabled,
+    setSilentStartEnabled,
+    setDebugMode,
+    setPrivateMode,
+    loading,
+  } = useAppSettings(useShallow(selectAppSettingsDialogState));
 
   useEffect(() => {
     if (isOpen) {
@@ -108,17 +112,30 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
       open={isOpen}
       footer={null}
       onCancel={() => onOpenChange(false)}
-      title={<div className={"flex flex-row items-center gap-1.5"}>
-        <Settings className="h-4 w-4 text-gray-500" />
+      className="[&_.ant-modal-content]:overflow-hidden [&_.ant-modal-content]:rounded-[24px] [&_.ant-modal-content]:border [&_.ant-modal-content]:border-border [&_.ant-modal-content]:bg-card/95 [&_.ant-modal-content]:shadow-[0_32px_80px_-40px_rgba(15,23,42,0.55)] [&_.ant-modal-content]:backdrop-blur-xl"
+      width={680}
+      style={{ top: 48 }}
+      styles={{
+        header: {
+          marginBottom: 0,
+          padding: '20px 20px 0',
+          background: 'transparent',
+        },
+        body: {
+          padding: 0,
+        },
+      }}
+      title={<div className={"flex flex-row items-center gap-1.5 text-foreground"}>
+        <Settings className="h-4 w-4 text-muted-foreground" />
         <span>{t('title')}</span>
         <span
-          className="ml-1 text-xs font-mono text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-0.5 rounded-full font-normal">
+          className="ml-1 rounded-full bg-secondary px-2 py-0.5 text-xs font-mono font-normal text-muted-foreground">
           {t('version', { version: appVersion })}
         </span>
       </div>
       }
     >
-      <div className="p-5 space-y-6">
+      <div className="space-y-6 p-6">
         {/* 路径设置组 */}
         <div className="space-y-4">
           <div className="space-y-3">
@@ -127,7 +144,7 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
               value={execPath}
               actionTitle={t('paths.executable')}
               onAction={handleBrowseExecPath}
-              actionIcon={<FileCode className="h-4 w-4 text-gray-500" />}
+              actionIcon={<FileCode className="h-4 w-4 text-muted-foreground" />}
             />
 
             <PathSettingRow
@@ -135,16 +152,16 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
               value={logDirPath}
               actionTitle={t('paths.openLogDirectory')}
               onAction={handleOpenLogDirectory}
-              actionIcon={<FolderOpen className="h-4 w-4 text-gray-500" />}
+              actionIcon={<FolderOpen className="h-4 w-4 text-muted-foreground" />}
             />
           </div>
         </div>
 
-        <div className="h-px bg-gray-100 dark:bg-gray-800" />
+        <div className="h-px bg-border/80" />
 
 
 
-        <div className="h-px bg-gray-100 dark:bg-gray-800" />
+        <div className="h-px bg-border/80" />
 
         <div className="space-y-1">
           <SettingToggle
@@ -184,7 +201,7 @@ const BusinessSettingsDialog: React.FC<BusinessSettingsDialogProps> = ({
           />
         </div>
 
-        <div className="h-px bg-gray-100 dark:bg-gray-800" />
+        <div className="h-px bg-border/80" />
 
         <div className="space-y-1">
           <a target={"_blank"} href={"https://github.com/MonchiLin/antigravity-agent/issues"}>{t('links.issues')}</a>
@@ -208,20 +225,20 @@ const PathSettingRow = ({
   onAction: () => void;
   actionIcon: React.ReactNode;
 }) => (
-  <div className="group">
+  <div className="group space-y-1.5">
     <label
-      className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1.5 block px-1">
+      className="block px-1 text-sm font-medium text-foreground">
       {label}
     </label>
     <div className="flex gap-2">
       <div
-        className="flex-1 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-md px-3 py-2 text-xs font-mono text-gray-600 dark:text-gray-400 break-all select-all transition-colors group-hover:border-gray-300 dark:group-hover:border-gray-700">
+        className="flex-1 rounded-xl border border-border bg-input/80 px-3 py-2 text-xs font-mono text-muted-foreground break-all select-all transition-colors group-hover:border-border/80">
         {value}
       </div>
       <BaseButton
         variant="outline"
         size="icon"
-        className="h-[34px] w-[34px] shrink-0 border-gray-200 dark:border-gray-800"
+        className="h-[36px] w-[36px] shrink-0"
         onClick={onAction}
         title={actionTitle}
       >
@@ -247,21 +264,21 @@ const SettingToggle = ({
   onChange: (checked: boolean) => void;
   isLoading: boolean;
 }) => (
-  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-900/50 transition-colors group cursor-pointer" onClick={() => !isLoading && onChange(!checked)}>
+  <div className="group flex cursor-pointer items-center justify-between rounded-2xl border border-transparent p-3 transition-colors hover:border-border/70 hover:bg-accent/35" onClick={() => !isLoading && onChange(!checked)}>
     <div className="flex items-center gap-3">
-      <div className="p-2 bg-white dark:bg-gray-800 rounded-md shadow-sm border border-gray-100 dark:border-gray-700 group-hover:border-gray-200 dark:group-hover:border-gray-600 transition-colors">
+      <div className="rounded-xl border border-border/70 bg-card p-2 shadow-sm transition-colors group-hover:border-border">
         {icon}
       </div>
       <div>
-        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{title}</div>
-        <div className="text-xs text-gray-500 dark:text-gray-400">{description}</div>
+        <div className="text-sm font-medium text-foreground">{title}</div>
+        <div className="text-xs leading-5 text-muted-foreground">{description}</div>
       </div>
     </div>
 
     <div className="relative">
       {isLoading ? (
         <div className="h-5 w-9 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-3.5 w-3.5 border-2 border-gray-300 border-t-blue-600"></div>
+          <div className="animate-spin rounded-full border-2 border-border border-t-primary h-3.5 w-3.5"></div>
         </div>
       ) : (
         <button
@@ -269,8 +286,8 @@ const SettingToggle = ({
           role="switch"
           aria-checked={checked}
           className={cn(
-            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2",
-            checked ? "bg-blue-600" : "bg-gray-200 dark:bg-gray-700"
+            "relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+            checked ? "bg-primary" : "bg-muted"
           )}
         >
           <span

@@ -2,6 +2,7 @@ use crate::directories;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ProfileInfo {
@@ -31,6 +32,7 @@ pub struct InnerState {
     pub config_dir: PathBuf,
     pub antigravity_accounts: HashMap<String, AntigravityAccount>,
     pub current_account_id: Option<String>,
+    pub server_session_token: String,
 }
 
 #[derive(Debug, Clone)]
@@ -48,6 +50,7 @@ impl Default for AppState {
             config_dir,
             antigravity_accounts: HashMap::new(),
             current_account_id: None,
+            server_session_token: Uuid::new_v4().to_string(),
         };
 
         Self {

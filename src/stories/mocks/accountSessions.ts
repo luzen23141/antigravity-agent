@@ -1,5 +1,8 @@
 import type { AntigravityAccount } from '@/commands/types/account.types.ts';
-import type { AccountSessionListAccountItem } from '@/components/business/AccountSessionList.tsx';
+import type {
+  AccountSessionCardViewModel,
+  AccountSessionListItem,
+} from '@/components/business/account-session-types.ts';
 import type {
   AccountAdditionData,
   UserTier,
@@ -29,6 +32,7 @@ const defaultQuotas: AccountAdditionData = {
   claudeQuoteRestIn: '2025-12-21T10:50:06Z',
   userAvatar: 'https://api.dicebear.com/9.x/avataaars/svg?seed=Default',
   userId: 'mock_default',
+  projectId: 'mock_project_default',
 };
 
 const baseMockAccounts: BaseMockAccount[] = [
@@ -190,7 +194,7 @@ function makeAdditionData(base: BaseMockAccount): AccountAdditionData {
 function makeSessionItem(
   base: BaseMockAccount,
   addition: AccountAdditionData
-): AccountSessionListAccountItem {
+): AccountSessionListItem {
   const [local] = base.email.split('@');
   return {
     nickName: base.nickName ?? local,
@@ -205,17 +209,14 @@ function makeSessionItem(
     claudeQuote: addition.claudeQuote,
     claudeQuoteRestIn: addition.claudeQuoteRestIn,
     tier: base.tier,
-    apiKey: `sk_${local}`,
-    accessToken: `ya29.mock_access_token_${local}`,
-    refreshToken: `1//mock_refresh_token_${local}`,
     persisted: true,
   };
 }
 
 function buildGridItems(
-  items: AccountSessionListAccountItem[],
+  items: AccountSessionListItem[],
   total = 9
-): AccountSessionListAccountItem[] {
+): AccountSessionListItem[] {
   return Array.from({ length: total }).map((_, i) => {
     const base = items[i % items.length];
     const [name, domain] = base.email.split('@');
@@ -223,12 +224,11 @@ function buildGridItems(
       ...base,
       email: `${name}+${i}@${domain}`,
       nickName: `${base.nickName} #${i + 1}`,
-      apiKey: `${base.apiKey}_${i}`,
     };
   });
 }
 
-const longEmailItem: AccountSessionListAccountItem = {
+const longEmailItem: AccountSessionListItem = {
   nickName:
     'ThisIsAnExcessivelyLongNickName_ToTest_TextOverflow_AndLayoutStability_InUserCardHeader',
   email:
@@ -243,9 +243,6 @@ const longEmailItem: AccountSessionListAccountItem = {
   claudeQuote: 0.77,
   claudeQuoteRestIn: '2025-12-22T09:00:00Z',
   tier: 'g1-pro-tier',
-  apiKey: 'sk_mock_long_email',
-  accessToken: 'ya29.mock_access_token_long_email',
-  refreshToken: '1//mock_refresh_token_long_email',
   persisted: true,
 };
 
@@ -256,14 +253,22 @@ export const mockAdditionDataMap: Record<string, AccountAdditionData> =
     baseMockAccounts.map((base) => [base.email, makeAdditionData(base)])
   );
 
-export const mockSessionItems: AccountSessionListAccountItem[] =
+export const mockSessionItems: AccountSessionListItem[] =
   baseMockAccounts.map((base) =>
     makeSessionItem(base, makeAdditionData(base))
   );
 
+export const mockSessionCardViewModels: AccountSessionCardViewModel[] =
+  mockSessionItems.map((account) => ({
+    account,
+    displayEmail: account.email,
+    displayName: account.nickName,
+    isCurrentUser: false,
+  }));
+
 export const gridSessionItems = buildGridItems(mockSessionItems);
 
-export const longEmailSessionItems: AccountSessionListAccountItem[] = [
+export const longEmailSessionItems: AccountSessionListItem[] = [
   longEmailItem,
   ...mockSessionItems,
 ];

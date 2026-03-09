@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LiquidProgressBar } from "@/components/ui/liquid-progress-bar.tsx";
 
 const meta = {

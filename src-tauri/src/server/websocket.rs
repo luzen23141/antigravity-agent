@@ -39,8 +39,13 @@
 //! }
 //! ```
 
+use crate::server::middleware::SESSION_HEADER;
+use crate::AppState;
 use actix::{Actor, ActorContext, Addr, AsyncContext, Handler, Message, StreamHandler};
-use actix_web::{web, HttpRequest, HttpResponse};
+use actix_web::{
+    http::header,
+    web, HttpRequest, HttpResponse,
+};
 use actix_web_actors::ws;
 use parking_lot::RwLock;
 use serde::{Deserialize, Serialize};
@@ -425,11 +430,41 @@ impl Handler<TextMessage> for WsSession {
 /// ```text
 /// GET ws://127.0.0.1:56789/ws
 /// ```
+fn is_allowed_websocket_origin(req: &HttpRequest) -> bool {
+    let Some(origin) = req
+        .headers()
+        .get(header::ORIGIN)
+        .and_then(|value| value.to_str().ok())
+    else {
+        return true;
+    };
+
+    super::is_allowed_origin(origin)
+}
+
 pub async fn ws_handler(
     req: HttpRequest,
     stream: web::Payload,
+    state: web::Data<AppState>,
 ) -> Result<HttpResponse, actix_web::Error> {
-    tracing::info!("新的 WebSocket 连接请求");
+    if !is_allowed_websocket_origin(&req) {
+        return Ok(HttpResponse::Forbidden().finish());
+    }
+
+    let expected_token = {
+        let inner = state.inner.lock();
+        inner.server_session_token.clone()
+    };
+    let provided_token = req
+        .headers()
+        .get(SESSION_HEADER)
+        .and_then(|value| value.to_str().ok());
+
+    if provided_token != Some(expected_token.as_str()) {
+        return Ok(HttpResponse::Unauthorized().finish());
+    }
+
+    tracing::info!(has_origin = req.headers().contains_key(header::ORIGIN), "新的 WebSocket 连接请求");
     ws::start(WsSession::new(), &req, stream)
 }
 

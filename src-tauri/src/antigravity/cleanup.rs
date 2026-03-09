@@ -4,8 +4,7 @@
 use rusqlite::{params, Connection};
 use std::path::Path;
 
-// 导入 platform_utils 模块
-use crate::platform;
+use crate::services::account::resolve_antigravity_db_path;
 
 fn clear_database(db_path: &Path, db_name: &str) -> Result<usize, String> {
     tracing::info!(target: "cleanup::database", db_name = %db_name, "开始清理数据库");
@@ -49,7 +48,7 @@ fn clear_database(db_path: &Path, db_name: &str) -> Result<usize, String> {
 pub async fn clear_all_antigravity_data() -> Result<String, String> {
     tracing::info!(target: "cleanup::main", "开始清除 Antigravity 用户认证数据");
 
-    let app_data = platform::get_antigravity_db_path().unwrap();
+    let app_data = resolve_antigravity_db_path()?;
 
     let mut msg = String::new();
 

@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { universalInvoke } from '@/lib/invoke-adapter';
+import { invokeCommand } from '@/lib/invoke-adapter';
 import { Modal } from 'antd';
-import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 // TODO: 替换为实际的 Antigravity 插件 ID
@@ -48,7 +47,7 @@ export const useInstallExtension = (): UseInstallExtensionResult => {
             toast.loading(t('extension.downloading', { id: TARGET_EXTENSION_ID, version }), { id: toastId });
 
             // 3. 调用后端命令
-            const result = await universalInvoke<string>('launch_and_install_extension', { url: downloadUrl });
+            const result = await invokeCommand<string>('launch_and_install_extension', { url: downloadUrl });
 
             toast.success(result, { id: toastId });
 

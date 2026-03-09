@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '@storybook/react';
+import type { Meta, StoryObj } from '@storybook/react-vite';
 import { fn } from 'storybook/test';
 import { BaseButton } from '@/components/base-ui/BaseButton.tsx';
 import { ArrowRight, Plus, Trash2 } from 'lucide-react';

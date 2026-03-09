@@ -23,15 +23,19 @@ tracing-appender = "0.2.4"
 tracing-attributes = "0.1"
 
 base64 = "0.22.1"
+aes-gcm = { version = "0.10", features = ["aes"] }
+pbkdf2 = "0.12"
+sha2 = "0.10"
+rand = "0.8"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.48", features = ["full"] }
 dirs = "6.0"
 chrono = { version = "0.4", features = ["serde"] }
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.38", features = ["bundled"] }
 regex = "1.10"
-sysinfo = "0.30"
-prost = "0.12"
+sysinfo = "0.38"
+prost = "0.14"
 log = "0.4.28"
 actix = "0.13"
 actix-web = "4.12.1"
@@ -39,7 +43,7 @@ actix-cors = "0.7.1"
 actix-web-actors = "4"
 uuid = { version = "1", features = ["v4"] }
 parking_lot = "0.12.5"
-reqwest = { version = "0.12.28", features = ["json", "rustls-tls", "stream"] }
+reqwest = { version = "0.13", features = ["json", "rustls", "stream", "form"] }
 tempfile = "3.10"
 futures-util = "0.3"
 lazy_static = "1.4"
@@ -49,5 +53,5 @@ lazy_static = "1.4"
 
 [build-dependencies]
 tauri-build = { version = "2.0", features = [] }
-prost-build = "0.12"
+prost-build = "0.14"
 protoc-bin-vendored = "3"

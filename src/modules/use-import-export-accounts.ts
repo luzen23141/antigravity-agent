@@ -5,12 +5,11 @@
 
 import { create } from 'zustand';
 import { open, save } from '@tauri-apps/plugin-dialog';
-import { readTextFile } from '@tauri-apps/plugin-fs';
+import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs';
 import { logger } from '@/lib/logger.ts';
 import toast from 'react-hot-toast';
 import { AccountManageCommands } from "@/commands/AccountManageCommands.ts";
 import { BackupData } from "@/commands/types/account-manage.types.ts";
-import { LoggingCommands } from "@/commands/LoggingCommands.ts";
 import i18n from '@/i18n';
 
 interface EncryptedConfigData {
@@ -209,7 +208,7 @@ export const useImportExportAccount = create<ConfigState & ConfigActions>()(
           }
 
           // 保存加密文件
-          await LoggingCommands.writeTextFile(savePath, encryptedData);
+          await writeTextFile(savePath, encryptedData);
 
           toast.success(i18n.t('notifications:backup.saveSuccess', { path: savePath }));
           logger.info('导出配置成功', {

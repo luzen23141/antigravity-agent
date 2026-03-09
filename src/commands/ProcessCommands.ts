@@ -1,4 +1,4 @@
-import { universalInvoke } from '@/lib/invoke-adapter';
+import { invokeCommand } from '@/lib/invoke-adapter';
 
 /**
  * 进程管理命令
@@ -9,6 +9,6 @@ export class ProcessCommands {
    * @returns 是否正在运行
    */
   static async isRunning(): Promise<boolean> {
-    return universalInvoke('is_antigravity_running');
+    return invokeCommand('is_antigravity_running');
   }
 }

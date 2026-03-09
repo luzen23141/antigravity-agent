@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Eye, EyeOff, Lock, Download } from 'lucide-react';
+import React from 'react';
+import { Download } from 'lucide-react';
 import { Modal } from "antd";
 import { useTranslation } from 'react-i18next';
+import { BasePasswordInput } from '@/components/base-ui/BaseInput.tsx';
+import { usePasswordDialogState } from '@/hooks/use-password-dialog-state.ts';
 
 interface ExportPasswordDialogProps {
   isOpen: boolean;
@@ -17,153 +19,99 @@ const ExportPasswordDialog: React.FC<ExportPasswordDialogProps> = ({
   onCancel
 }) => {
   const { t } = useTranslation('importExport');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [validationError, setValidationError] = useState<string>('');
-
-  const validatePassword = (password: string) => {
-    if (password.length < 4) return { isValid: false, message: t('validation.passwordTooShort') };
-    if (password.length > 50) return { isValid: false, message: t('validation.passwordTooLong') };
-    return { isValid: true };
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // 清除之前的错误
-    setValidationError('');
-
-    // 基本密码验证：确保密码不为空
-    if (!password.trim()) {
-      setValidationError(t('validation.passwordRequired'));
-      return;
-    }
-
-    // 自定义密码验证
-    const validation = validatePassword(password);
-    if (!validation.isValid) {
-      setValidationError(validation.message || t('validation.passwordInvalid'));
-      return;
-    }
-
-    // 确认密码验证
-    if (password !== confirmPassword) {
-      setValidationError(t('validation.passwordMismatch'));
-      return;
-    }
-
-    onSubmit(password);
-    // 重置状态
-    setPassword('');
-    setConfirmPassword('');
-    setShowPassword(false);
-    setShowConfirmPassword(false);
-    setValidationError('');
-  };
-
-  const handleClose = () => {
-    // 重置状态
-    setPassword('');
-    setConfirmPassword('');
-    setShowPassword(false);
-    setShowConfirmPassword(false);
-    setValidationError('');
-    onOpenChange(false);
-  };
-
-  const isValid = password.trim() !== '' &&
-    validatePassword(password).isValid &&
-    password === confirmPassword;
+  const {
+    password,
+    confirmPassword,
+    validationError,
+    handlePasswordChange,
+    handleConfirmPasswordChange,
+    handleSubmit,
+    handleClose,
+    isValid,
+  } = usePasswordDialogState({
+    t,
+    requireConfirmation: true,
+    onSubmit,
+    onCancel,
+    onOpenChange,
+  });
 
   return (
     <Modal
       open={isOpen}
-      onCancel={() => onOpenChange(false)}
-      title={<div className="text-lg font-semibold text-gray-900 flex items-center gap-3">
-        <Download className="h-5 w-5 text-antigravity-blue" />
-        {t('export.title')}
-      </div>}
-      okButtonProps={{
-        disabled: !isValid,
-        onClick: () => onSubmit(password),
+      footer={null}
+      onCancel={handleClose}
+      className="[&_.ant-modal-content]:overflow-hidden [&_.ant-modal-content]:rounded-[24px] [&_.ant-modal-content]:border [&_.ant-modal-content]:border-border [&_.ant-modal-content]:bg-card/95 [&_.ant-modal-content]:shadow-[0_32px_80px_-40px_rgba(15,23,42,0.55)] [&_.ant-modal-content]:backdrop-blur-xl"
+      width={560}
+      style={{ top: 72 }}
+      styles={{
+        header: {
+          marginBottom: 0,
+          padding: '20px 20px 0',
+          background: 'transparent',
+        },
+        body: {
+          padding: 0,
+        },
       }}
-      cancelButtonProps={{
-        onClick: handleClose,
-      }}
+      title={
+        <div className="flex items-center gap-2 text-foreground">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-border/70 bg-background/80 shadow-sm">
+            <Download className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <div className="text-base font-semibold leading-none">{t('export.title')}</div>
+            <div className="mt-1 text-xs font-normal text-muted-foreground">{t('export.description')}</div>
+          </div>
+        </div>
+      }
     >
+      <div className="space-y-5 p-6">
+        <div className="space-y-4 rounded-2xl border border-border/70 bg-muted/35 p-4">
+          <BasePasswordInput
+            autoFocus
+            label={t('export.password')}
+            value={password}
+            onChange={e => handlePasswordChange(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && isValid) {
+                handleSubmit();
+              }
+            }}
+            placeholder={t('export.passwordPlaceholder')}
+            error={validationError || undefined}
+          />
 
-      <div className="mt-4">
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-          {t('export.description')}
-        </p>
+          <BasePasswordInput
+            label={t('export.confirmPassword')}
+            value={confirmPassword}
+            onChange={e => handleConfirmPasswordChange(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && isValid) {
+                handleSubmit();
+              }
+            }}
+            placeholder={t('export.confirmPasswordPlaceholder')}
+            error={validationError || undefined}
+          />
+        </div>
 
-        <div className="space-y-4">
-          {/* 密码输入 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-              <Lock className="h-4 w-4" />
-              {t('export.password')}
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={t('export.passwordPlaceholder')}
-                className="w-full px-4 py-3 pr-12 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-antigravity-blue focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
-              >
-                {showPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* 确认密码输入 */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
-              <Lock className="h-4 w-4" />
-              {t('export.confirmPassword')}
-            </label>
-            <div className="relative">
-              <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder={t('export.confirmPasswordPlaceholder')}
-                className="w-full px-4 py-3 pr-12 bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-antigravity-blue focus:border-transparent transition-all duration-200 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors duration-200"
-              >
-                {showConfirmPassword ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </button>
-            </div>
-          </div>
-
-          {/* 错误信息 */}
-          {validationError && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3">
-              <p className="text-sm text-red-600 dark:text-red-400">{validationError}</p>
-            </div>
-          )}
-
+        <div className="flex items-center justify-end gap-3 border-t border-border/70 pt-1">
+          <button
+            type="button"
+            onClick={handleClose}
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-background/80 px-4 text-sm font-medium text-foreground transition-colors duration-200 hover:bg-accent"
+          >
+            {t('common.cancel', { defaultValue: 'Cancel' })}
+          </button>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={!isValid}
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-primary/90 bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm shadow-primary/15 transition-[background-color,border-color,box-shadow,transform] duration-200 hover:bg-primary/92 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {t('export.title')}
+          </button>
         </div>
       </div>
     </Modal>

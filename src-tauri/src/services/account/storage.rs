@@ -110,12 +110,45 @@ pub fn backup_file_modified_time(path: &Path) -> SystemTime {
         .unwrap_or(SystemTime::UNIX_EPOCH)
 }
 
+pub fn validate_account_file_name(account_file_name: &str) -> Result<(), String> {
+    if account_file_name.is_empty() {
+        return Err("Account file name cannot be empty".to_string());
+    }
+
+    if account_file_name.contains('/') || account_file_name.contains('\\') {
+        return Err("Account file name contains path separators".to_string());
+    }
+
+    if account_file_name.starts_with('.') || account_file_name.contains("..") {
+        return Err("Account file name contains invalid path segments".to_string());
+    }
+
+    if !account_file_name
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '.' | '_' | '-' | '@' | '+'))
+    {
+        return Err(
+            "Account file name may only contain ASCII letters, numbers, '.', '_', '-', '@', or '+'"
+                .to_string(),
+        );
+    }
+
+    Ok(())
+}
+
+pub fn resolve_backup_file_path(account_file_name: &str) -> Result<PathBuf, String> {
+    validate_account_file_name(account_file_name)?;
+    Ok(
+        crate::directories::get_accounts_directory().join(format!("{account_file_name}.json")),
+    )
+}
+
 pub fn write_backup_file(
     account_file_name: &str,
     fields: &RawAccountFields,
 ) -> Result<PathBuf, String> {
     let accounts_dir = crate::directories::get_accounts_directory();
-    let account_file = accounts_dir.join(format!("{account_file_name}.json"));
+    let account_file = resolve_backup_file_path(account_file_name)?;
 
     let mut content_map = serde_json::Map::new();
     content_map.insert(
@@ -140,6 +173,13 @@ pub fn write_backup_file(
     let content = serde_json::Value::Object(content_map);
     let serialized = serde_json::to_string_pretty(&content)
         .map_err(|e| format!("Failed to serialize account backup JSON: {e}"))?;
+
+    fs::create_dir_all(&accounts_dir).map_err(|e| {
+        format!(
+            "Failed to create account backup directory ({}): {e}",
+            accounts_dir.display()
+        )
+    })?;
 
     fs::write(&account_file, serialized).map_err(|e| {
         format!(

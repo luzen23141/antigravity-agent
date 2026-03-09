@@ -8,7 +8,7 @@ use std::path::PathBuf;
 
 // 导入相关模块
 use crate::constants::database;
-use crate::platform;
+use crate::services::account::resolve_antigravity_db_path;
 
 /// 恢复 Antigravity 状态（精简版）
 ///
@@ -26,7 +26,7 @@ pub async fn save_antigravity_account_to_file(
     let content = fs::read_to_string(&account_file_path).map_err(|e| e.to_string())?;
     let account_data: Value = serde_json::from_str(&content).map_err(|e| e.to_string())?;
 
-    let app_data = platform::get_antigravity_db_path().unwrap();
+    let app_data = resolve_antigravity_db_path()?;
 
     // 确保数据库目录存在
     if let Some(parent) = app_data.parent() {

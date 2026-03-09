@@ -1,4 +1,4 @@
-import { universalInvoke } from '@/lib/invoke-adapter';
+import { invokeCommand } from '@/lib/invoke-adapter';
 import type { TriggerResult } from '@/commands/types/account.types.ts';
 
 export class AccountTriggerCommands {
@@ -9,6 +9,6 @@ export class AccountTriggerCommands {
      * @param email The account email
      */
     static async triggerQuotaRefresh(email: string): Promise<TriggerResult> {
-        return universalInvoke('trigger_quota_refresh', { email });
+        return invokeCommand('trigger_quota_refresh', { email });
     }
 }

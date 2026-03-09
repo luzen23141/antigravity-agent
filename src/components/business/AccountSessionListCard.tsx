@@ -1,6 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { motion, useMotionTemplate, useMotionValue, useSpring } from 'framer-motion';
+import { motion, useMotionTemplate, useMotionValue, useReducedMotion, useSpring } from 'framer-motion';
 import { Tooltip } from 'antd';
 import { cn } from "@/lib/utils.ts";
 import { Avatar } from "@/components/ui/avatar.tsx";
@@ -9,6 +9,8 @@ import { useAntigravityIsRunning } from "@/hooks/use-antigravity-is-running.ts";
 import { BaseButton } from "@/components/base-ui/BaseButton.tsx";
 import { Variants } from "motion/react";
 import { LiquidProgressBar } from "@/components/ui/liquid-progress-bar.tsx";
+import { accountSessionMotion } from '@/components/business/account-session-motion.ts';
+import type { AccountSessionCardViewModel } from '@/components/business/account-session-types.ts';
 
 // ==========================================
 // 类型定义
@@ -16,20 +18,7 @@ import { LiquidProgressBar } from "@/components/ui/liquid-progress-bar.tsx";
 type UserTier = 'free-tier' | 'g1-pro-tier' | 'g1-ultra-tier';
 
 interface UserSessionCardProps {
-  nickName: string;
-  userAvatar: string;
-  email: string;
-  tier: UserTier;
-  persisted: boolean;
-  geminiProQuote: number | -1
-  geminiProQuoteRestIn: string
-  geminiFlashQuote: number | -1
-  geminiFlashQuoteRestIn: string
-  geminiImageQuote: number | -1
-  geminiImageQuoteRestIn: string
-  claudeQuote: number | -1
-  claudeQuoteRestIn: string
-  isCurrentUser: boolean;
+  viewModel: AccountSessionCardViewModel;
   onSelect: () => void
   onSwitch: () => void
   onDelete: () => void
@@ -67,16 +56,16 @@ const tierVisualStyles: Record<UserTier, TierVisualStyles> = {
 };
 
 const unknownStyle: TierVisualStyles = {
-  background: 'repeating-linear-gradient(45deg, #f8fafc, #f8fafc 10px, #f1f5f9 10px, #f1f5f9 20px)',
-  borderColor: '#cbd5e1',
-  boxShadow: 'none',
-  hoverBoxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
+  background: 'linear-gradient(to bottom, rgba(248, 250, 252, 0.94), rgba(255, 255, 255, 0.88))',
+  borderColor: 'rgba(148, 163, 184, 0.45)',
+  boxShadow: '0 12px 24px -18px rgba(15, 23, 42, 0.25)',
+  hoverBoxShadow: '0 20px 40px -24px rgba(15, 23, 42, 0.32)',
 };
 
 const tierBadgeMap: Record<UserTier, React.ReactNode> = {
-  "free-tier": <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-bold rounded-md leading-none border border-slate-200 shadow-sm">Free</span>,
-  "g1-pro-tier": <span className="px-1.5 py-0.5 bg-amber-50 text-amber-600 text-[10px] font-bold rounded-md leading-none border border-amber-200/60 flex items-center gap-0.5 shadow-sm"><Crown size={10} className="fill-current" />Pro</span>,
-  "g1-ultra-tier": <span className="px-1.5 py-0.5 bg-violet-50 text-violet-600 text-[10px] font-bold rounded-md leading-none border border-violet-200/60 flex items-center gap-0.5 shadow-sm"><Gem size={10} className="fill-current" />Ultra</span>,
+  "free-tier": <span className="rounded-md border border-border/70 bg-secondary px-1.5 py-0.5 text-[10px] font-bold leading-none text-muted-foreground shadow-sm">Free</span>,
+  "g1-pro-tier": <span className="flex items-center gap-0.5 rounded-md border border-amber-300/60 bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-bold leading-none text-amber-700 shadow-sm dark:text-amber-300"><Crown size={10} className="fill-current" />Pro</span>,
+  "g1-ultra-tier": <span className="flex items-center gap-0.5 rounded-md border border-violet-300/60 bg-violet-500/10 px-1.5 py-0.5 text-[10px] font-bold leading-none text-violet-700 shadow-sm dark:text-violet-300"><Gem size={10} className="fill-current" />Ultra</span>,
 };
 
 const tooltipInnerStyle: React.CSSProperties = {
@@ -84,37 +73,78 @@ const tooltipInnerStyle: React.CSSProperties = {
   wordBreak: 'break-all',
 };
 
+
 // 容器变体：控制整体入场 + 协调子元素入场
 const containerVariants: Variants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: accountSessionMotion.card.containerEnterY },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.4,
-      ease: "easeOut",
-      // 关键：staggerChildren 让子元素依次出现，0.1s 间隔
-      staggerChildren: 0.1,
-      delayChildren: 0.05
+      duration: accountSessionMotion.card.containerDuration,
+      ease: accountSessionMotion.card.containerEase,
+      staggerChildren: accountSessionMotion.card.staggerChildren,
+      delayChildren: accountSessionMotion.card.delayChildren,
     }
   }
 };
 
 // 子元素变体：统一的上浮淡入效果
 const childVariants: Variants = {
-  hidden: { opacity: 0, y: 12, filter: 'blur(4px)' },
+  hidden: { opacity: 0, y: accountSessionMotion.card.childEnterY, filter: accountSessionMotion.card.childBlur },
   visible: {
     opacity: 1,
     y: 0,
     filter: 'blur(0px)',
-    transition: { duration: 0.4, ease: "backOut" }
+    transition: { duration: accountSessionMotion.card.containerDuration, ease: accountSessionMotion.card.childEase }
   }
 };
 
-export function AccountSessionListCard(props: UserSessionCardProps) {
+export function AccountSessionListCard({ viewModel, onSelect, onSwitch, onDelete }: UserSessionCardProps) {
   const { t } = useTranslation(['account', 'common']);
   const isRunning = useAntigravityIsRunning(state => state.isRunning);
-  let { tier } = props;
+  const shouldReduceMotion = useReducedMotion();
+  const {
+    account: {
+      tier,
+      geminiProQuote,
+      geminiProQuoteRestIn,
+      geminiFlashQuote,
+      geminiFlashQuoteRestIn,
+      geminiImageQuote,
+      geminiImageQuoteRestIn,
+      claudeQuote,
+      claudeQuoteRestIn,
+      userAvatar,
+      persisted,
+    },
+    displayEmail,
+    displayName,
+    isCurrentUser,
+  } = viewModel;
+
+  const quotaItems = [
+    {
+      type: 'gemini-pro' as const,
+      percentage: geminiProQuote === -1 ? -1 : geminiProQuote,
+      resetIn: geminiProQuoteRestIn,
+    },
+    {
+      type: 'claude' as const,
+      percentage: geminiProQuote === -1 ? -1 : claudeQuote,
+      resetIn: claudeQuoteRestIn,
+    },
+    {
+      type: 'gemini-flash' as const,
+      percentage: geminiProQuote === -1 ? -1 : geminiFlashQuote,
+      resetIn: geminiFlashQuoteRestIn,
+    },
+    {
+      type: 'gemini-image' as const,
+      percentage: geminiProQuote === -1 ? -1 : geminiImageQuote,
+      resetIn: geminiImageQuoteRestIn,
+    },
+  ];
 
   // 如果是未知层级，使用专门定义的未知样式，否则使用对应层级的样式
   const currentStyles = tierVisualStyles[tier] || unknownStyle;
@@ -126,8 +156,8 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
   const mouseY = useMotionValue(0);
 
   // 使用 Spring 让光标跟随有轻微的物理延迟感，更高级
-  const springX = useSpring(mouseX, { stiffness: 500, damping: 30 });
-  const springY = useSpring(mouseY, { stiffness: 500, damping: 30 });
+  const springX = useSpring(mouseX, accountSessionMotion.card.spring);
+  const springY = useSpring(mouseY, accountSessionMotion.card.spring);
 
   function handleMouseMove({ currentTarget, clientX, clientY }: React.MouseEvent) {
     const { left, top } = currentTarget.getBoundingClientRect();
@@ -137,15 +167,16 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
 
   return (
     <motion.div
-      onClick={props.onSelect}
+      onClick={onSelect}
       onMouseMove={handleMouseMove}
       className={cn(
-        "group w-[340px] rounded-2xl px-6 py-5 border cursor-pointer relative overflow-hidden",
-        "transition-colors duration-200",
-        props.isCurrentUser
-          ? "border-blue-400/50 dark:border-blue-500/50 ring-1 ring-blue-400/50"
-          : "border-slate-200 dark:border-slate-700/80 hover:border-slate-300 dark:hover:border-slate-600",
-        !props.persisted && "ring-2 ring-red-500 ring-offset-2 dark:ring-offset-slate-950"
+        "group relative w-[340px] overflow-hidden rounded-[28px] border px-6 py-5 cursor-pointer",
+        "bg-card/92 text-card-foreground shadow-[0_18px_45px_-30px_rgba(15,23,42,0.35)] backdrop-blur-xl",
+        "transition-[border-color,background-color,box-shadow,transform] duration-200",
+        isCurrentUser
+          ? "border-primary/45 ring-1 ring-primary/25"
+          : "border-border/80 hover:border-primary/20",
+        !persisted && "ring-2 ring-destructive/70 ring-offset-2 ring-offset-background"
       )}
       style={otherStyles}
 
@@ -155,33 +186,31 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
       animate="visible"
 
       // 交互状态
-      whileHover={{
-        y: -4,
-        scale: 1.01,
+      whileHover={shouldReduceMotion ? undefined : {
+        y: accountSessionMotion.card.hoverLiftY,
         boxShadow: hoverBoxShadow || boxShadow
       }}
       transition={{
-        duration: 0.4,
-        ease: "easeOut",
-        // 阴影变化要稍微慢一点，显得厚重
-        boxShadow: { duration: 0.5, ease: "easeInOut" }
+        duration: accountSessionMotion.card.containerDuration,
+        ease: accountSessionMotion.card.containerEase,
+        boxShadow: { duration: accountSessionMotion.card.hoverShadowDuration, ease: "easeInOut" }
       }}
     >
 
-      {props.isCurrentUser && <div title={t('account:tooltip.currentSession')} className="flex items-center gap-1 mt-1 h-2 absolute top-1.5 right-1.5">
-        <div className="w-1 h-2 bg-blue-500 rounded-full animate-[bounce_1s_infinite]"></div>
-        <div className="w-1 h-3 bg-blue-500 rounded-full animate-[bounce_1s_infinite_100ms]"></div>
-        <div className="w-1 h-1.5 bg-blue-500 rounded-full animate-[bounce_1s_infinite_200ms]"></div>
+      {isCurrentUser && <div title={t('account:tooltip.currentSession')} className="absolute right-2.5 top-2.5 flex h-2 items-center gap-1">
+        <div className="h-2 w-1 rounded-full bg-primary animate-[bounce_1s_infinite]"></div>
+        <div className="h-3 w-1 rounded-full bg-primary animate-[bounce_1s_infinite_100ms]"></div>
+        <div className="h-1.5 w-1 rounded-full bg-primary animate-[bounce_1s_infinite_200ms]"></div>
       </div>}
 
       {/* --- 特效层 A: 聚光灯 (鼠标跟随) --- */}
       <motion.div
-        className="pointer-events-none absolute -inset-px rounded-2xl opacity-0 transition duration-500 group-hover:opacity-100 z-0"
+        className="pointer-events-none absolute -inset-px z-0 rounded-[28px] opacity-0 transition duration-500 group-hover:opacity-100"
         style={{
           background: useMotionTemplate`
             radial-gradient(
               650px circle at ${springX}px ${springY}px,
-              ${tier === 'g1-ultra-tier' ? 'rgba(167, 139, 250, 0.15)' : 'rgba(255,255,255,0.4)'},
+              ${tier === 'g1-ultra-tier' ? 'rgba(167, 139, 250, 0.12)' : 'rgba(99,102,241,0.08)'},
               transparent 80%
             )
           `
@@ -189,11 +218,11 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
       />
 
       {/* --- 特效层 B: Ultra 专属呼吸边框 --- */}
-      {tier === 'g1-ultra-tier' && (
+      {tier === 'g1-ultra-tier' && !shouldReduceMotion && (
         <motion.div
-          className="absolute inset-0 rounded-2xl border border-violet-400/30 pointer-events-none z-0"
+          className="absolute inset-0 z-0 rounded-[28px] border border-violet-400/30 pointer-events-none"
           animate={{ opacity: [0.3, 0.6, 0.3] }}
-          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: accountSessionMotion.card.ultraPulseDuration, repeat: Infinity, ease: "easeInOut" }}
         />
       )}
 
@@ -210,94 +239,55 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
               "h-12 w-12 rounded-full object-cover border-2 transition-all duration-300 shrink-0 ring-2 ring-offset-2",
               tier === 'g1-ultra-tier'
                 ? "border-white/60 ring-white/20"
-                : props.isCurrentUser
-                  ? "border-blue-400 ring-blue-100"
-                  : "border-gray-200 ring-gray-50 group-hover:border-blue-300 group-hover:ring-blue-50"
+                : isCurrentUser
+                  ? "border-primary ring-primary/15"
+                  : "border-border ring-background group-hover:border-primary/30 group-hover:ring-primary/10"
             )}
-            src={props.userAvatar}
-            alt={props.nickName}
+            src={userAvatar}
+            alt={displayName}
           />
 
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1 min-w-0">
-              <Tooltip title={props.nickName} styles={{ container: tooltipInnerStyle }}>
-                <h2 className="flex-1 min-w-0 text-lg font-bold text-slate-900 dark:text-slate-100 leading-tight line-clamp-2 break-words">
-                  {props.nickName}
+              <Tooltip title={displayName} styles={{ container: tooltipInnerStyle }}>
+                <h2 className="flex-1 min-w-0 text-lg font-bold leading-tight text-foreground line-clamp-2 break-words">
+                  {displayName}
                 </h2>
               </Tooltip>
               <div className="mt-0.5 shrink-0">
-                {tierBadgeMap[tier] || <span className="px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-[10px] font-bold rounded-md leading-none border border-slate-200 dark:border-slate-700 shadow-sm">{t('common:status.unknown')}</span>}
+                {tierBadgeMap[tier] || <span className="rounded-md border border-border bg-secondary px-1.5 py-0.5 text-[10px] font-bold leading-none text-muted-foreground shadow-sm">{t('common:status.unknown')}</span>}
               </div>
             </div>
-            <Tooltip title={props.email} styles={{ container: tooltipInnerStyle }}>
+            <Tooltip title={displayEmail} styles={{ container: tooltipInnerStyle }}>
               {/* 高度用于统一一行和两行对其 */}
-              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium line-clamp-2 break-all h-[42px]">{props.email}</p>
+              <p className="h-[42px] break-all text-sm font-medium text-muted-foreground line-clamp-2">{displayEmail}</p>
             </Tooltip>
           </div>
         </motion.header>
 
         {/* 进度条区域 */}
         <motion.div className="space-y-2" variants={childVariants}>
-          {props.geminiProQuote === -1 ? (
-            <>
-              <LiquidProgressBar
-                type="gemini-pro"
-                percentage={-1}
-                resetIn={props.geminiProQuoteRestIn}
-              />
-              <LiquidProgressBar
-                type="claude"
-                percentage={-1}
-                resetIn={props.claudeQuoteRestIn}
-              />
-              <LiquidProgressBar
-                type="gemini-flash"
-                percentage={-1}
-                resetIn={props.geminiFlashQuoteRestIn}
-              />
-              <LiquidProgressBar
-                type="gemini-image"
-                percentage={-1}
-                resetIn={props.geminiImageQuoteRestIn}
-              />
-            </>
-          ) : (
-            <>
-              <LiquidProgressBar
-                type="gemini-pro"
-                percentage={props.geminiProQuote}
-                resetIn={props.geminiProQuoteRestIn}
-              />
-              <LiquidProgressBar
-                type="claude"
-                percentage={props.claudeQuote}
-                resetIn={props.claudeQuoteRestIn}
-              />
-              <LiquidProgressBar
-                type="gemini-flash"
-                percentage={props.geminiFlashQuote}
-                resetIn={props.geminiFlashQuoteRestIn}
-              />
-              <LiquidProgressBar
-                type="gemini-image"
-                percentage={props.geminiImageQuote}
-                resetIn={props.geminiImageQuoteRestIn}
-              />
-            </>
-          )}
+          {quotaItems.map(item => (
+            <LiquidProgressBar
+              key={item.type}
+              type={item.type}
+              percentage={item.percentage}
+              resetIn={item.resetIn}
+            />
+          ))}
         </motion.div>
 
         {/* 底部交互区域 */}
         <motion.div
-          className="mt-6 flex items-center justify-center relative"
+          className="relative mt-6 flex items-center justify-center gap-2"
           variants={childVariants}
         >
           <BaseButton
             onClick={e => {
               e.stopPropagation();
-              props.onSwitch()
+              onSwitch()
             }}
-            disabled={(isRunning === false) ? false : props.isCurrentUser}
+            disabled={(isRunning === false) ? false : isCurrentUser}
             variant="outline"
             leftIcon={(isRunning === false) ? <Play className="w-3 h-3" /> : <ArrowLeftRight className={"w-3 h-3"} />}
           >
@@ -306,9 +296,9 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
           <BaseButton
             onClick={e => {
               e.stopPropagation()
-              props.onDelete()
+              onDelete()
             }}
-            disabled={props.isCurrentUser}
+            disabled={isCurrentUser}
             variant="ghost"
             rightIcon={<Trash2 className={"w-3 h-3"} />}
           >
@@ -316,7 +306,7 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
           </BaseButton>
         </motion.div>
       </div>
-      {(!props.persisted) && (
+      {!persisted && (
         <div className="absolute bottom-3 right-3 z-50">
           <Tooltip title={
             <div className="flex flex-col gap-0.5">
@@ -328,7 +318,7 @@ export function AccountSessionListCard(props: UserSessionCardProps) {
               </span>
             </div>
           }>
-            <TriangleAlert className="w-5 h-5 text-red-500 hover:text-red-600 transition-colors cursor-help" />
+            <TriangleAlert className="w-5 h-5 text-destructive transition-colors cursor-help hover:opacity-80" />
           </Tooltip>
         </div>
       )}

@@ -1,6 +1,9 @@
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::fs;
+use std::path::Path;
+use std::sync::OnceLock;
 use std::time::SystemTime;
 
 /// 备份数据收集结构
@@ -25,6 +28,76 @@ pub struct RestoreResult {
 pub struct FailedAccountExportedData {
     filename: String,
     error: String,
+}
+
+fn backup_filename_regex() -> &'static Regex {
+    static BACKUP_FILENAME_RE: OnceLock<Regex> = OnceLock::new();
+    BACKUP_FILENAME_RE.get_or_init(|| {
+        Regex::new(r"^[A-Za-z0-9._-]+\.json$").expect("backup filename regex must be valid")
+    })
+}
+
+fn backup_name_regex() -> &'static Regex {
+    static BACKUP_NAME_RE: OnceLock<Regex> = OnceLock::new();
+    BACKUP_NAME_RE.get_or_init(|| {
+        Regex::new(r"^[A-Za-z0-9._-]+$").expect("backup name regex must be valid")
+    })
+}
+
+fn validate_simple_name(
+    value: &str,
+    empty_message: &str,
+    invalid_path_message: &str,
+    invalid_pattern_message: &str,
+    pattern: &Regex,
+) -> Result<(), String> {
+    if value.is_empty() {
+        return Err(empty_message.to_string());
+    }
+
+    if value.contains('/') || value.contains('\\') {
+        return Err(invalid_path_message.to_string());
+    }
+
+    if value.starts_with('.') || value.contains("..") {
+        return Err("名称包含非法路径片段".to_string());
+    }
+
+    if !pattern.is_match(value) {
+        return Err(invalid_pattern_message.to_string());
+    }
+
+    Ok(())
+}
+
+fn validate_restore_filename(filename: &str) -> Result<(), String> {
+    validate_simple_name(
+        filename,
+        "文件名不能为空",
+        "文件名包含非法路径分隔符",
+        "文件名格式非法，仅允许 [A-Za-z0-9._-] 且必须为 .json",
+        backup_filename_regex(),
+    )
+}
+
+fn validate_delete_name(name: &str) -> Result<(), String> {
+    validate_simple_name(
+        name,
+        "名称不能为空",
+        "名称包含非法路径分隔符",
+        "名称格式非法，仅允许 [A-Za-z0-9._-]",
+        backup_name_regex(),
+    )
+}
+
+fn ensure_safe_restore_target(path: &Path) -> Result<(), String> {
+    if let Ok(meta) = fs::symlink_metadata(path) {
+        if meta.file_type().is_symlink() {
+            return Err("目标路径是符号链接，已拒绝写入".to_string());
+        }
+    }
+
+    Ok(())
 }
 
 /// 收集所有账户文件的完整内容, 用于导出
@@ -99,7 +172,22 @@ pub async fn restore_files(
 
     // 遍历每个备份
     for account_file in account_file_data {
+        if let Err(err) = validate_restore_filename(&account_file.filename) {
+            results.failed.push(FailedAccountExportedData {
+                filename: account_file.filename,
+                error: format!("非法文件名: {}", err),
+            });
+            continue;
+        }
+
         let file_path = antigravity_dir.join(&account_file.filename);
+        if let Err(err) = ensure_safe_restore_target(&file_path) {
+            results.failed.push(FailedAccountExportedData {
+                filename: account_file.filename,
+                error: err,
+            });
+            continue;
+        }
 
         match fs::write(
             &file_path,
@@ -124,6 +212,8 @@ pub async fn restore_files(
 
 /// 删除指定备份
 pub async fn delete(config_dir: &std::path::Path, name: String) -> Result<String, String> {
+    validate_delete_name(&name).map_err(|e| format!("非法名称: {}", e))?;
+
     // 只删除Antigravity账户JSON文件
     let antigravity_dir = config_dir.join("antigravity-accounts");
     let antigravity_file = antigravity_dir.join(format!("{}.json", name));

@@ -58,7 +58,9 @@ export class Logger {
       sessionId: this.sessionId
     };
 
-    LoggingCommands.writeFrontendLog(logEntry);
+    void LoggingCommands.writeFrontendLog(logEntry).catch((error) => {
+      console.warn('Failed to write frontend log', error);
+    });
 
     // 同时输出到浏览器控制台
     const consoleMethod = console[level as keyof Console] || console.log;

@@ -84,6 +84,7 @@ export function useUpdateChecker(autoCheck: boolean = true): UseUpdateCheckerRes
             setError(errorMsg);
             // 下载失败，恢复到更新可用状态，让用户可以重试
             setUpdateState('update-available');
+            throw err;
         }
     }, []);
 
@@ -105,6 +106,7 @@ export function useUpdateChecker(autoCheck: boolean = true): UseUpdateCheckerRes
             setError(errorMsg);
             // 安装失败，恢复到准备安装状态，让用户可以重试
             setUpdateState('ready-to-install');
+            throw err;
         }
     }, []);
 

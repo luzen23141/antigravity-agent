@@ -1,19 +1,19 @@
-import React, { useEffect, useRef, useState } from "react";
-import BusinessUserDetail from "@/components/business/AccountDetailModal.tsx";
-import { useAntigravityAccount, useCurrentAntigravityAccount } from "@/modules/use-antigravity-account.ts";
-import { useAccountAdditionData, UserTier } from "@/modules/use-account-addition-data.ts";
-import { useTrayMenu } from "@/hooks/use-tray-menu.ts";
-import { Modal } from 'antd';
+import { useEffect, useRef, useState } from "react";
+import { Modal } from "antd";
 import toast from 'react-hot-toast';
+import dayjs from "dayjs";
+import { clearInterval, setInterval } from 'worker-timers';
+import BusinessUserDetail from "@/components/business/AccountDetailModal.tsx";
+import AccountsListToolbar, { type ListToolbarValue } from "@/components/business/AccountsListToolbar.tsx";
+import { AccountSessionList } from "@/components/business/AccountSessionList.tsx";
+import type { AccountSessionAccount } from '@/components/business/account-session-types.ts';
+import { useTrayMenu } from "@/hooks/use-tray-menu.ts";
+import { logger } from "@/lib/logger.ts";
 import { maskEmail } from "@/lib/string-masking.ts";
 import { useAppGlobalLoader } from "@/modules/use-app-global-loader.ts";
-import { AccountSessionList, AccountSessionListAccountItem } from "@/components/business/AccountSessionList.tsx";
-import AccountsListToolbar, { type ListToolbarValue } from "@/components/business/AccountsListToolbar.tsx";
-import { logger } from "@/lib/logger.ts";
+import { useAccountAdditionData, type UserTier } from '@/modules/use-account-addition-data.ts';
+import { useAntigravityAccount, useCurrentAntigravityAccount } from "@/modules/use-antigravity-account.ts";
 import { useTranslation } from 'react-i18next';
-import dayjs from "dayjs";
-import { useInstallExtension } from "@/hooks/use-install-extension.tsx";
-import { clearInterval, setInterval } from 'worker-timers';
 import {useAntigravityIsRunning} from "@/hooks/use-antigravity-is-running.ts";
 
 const tierRank: Record<UserTier, number> = {
@@ -28,15 +28,13 @@ const toTs = (s?: string) => s ? dayjs(s).valueOf() || Infinity : Infinity;
 export function AppContent() {
   const { t } = useTranslation(['account', 'notifications']);
   const [isUserDetailOpen, setIsUserDetailOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<AccountSessionListAccountItem | null>(null);
+  const [selectedUser, setSelectedUser] = useState<AccountSessionAccount | null>(null);
 
-  const { install } = useInstallExtension();
 
   // Use selectors to prevent infinite render loops
   const accounts = useAntigravityAccount((state) => state.accounts);
   const getAccounts = useAntigravityAccount((state) => state.getAccounts);
   const deleteAccount = useAntigravityAccount((state) => state.delete);
-  const clearAllAccounts = useAntigravityAccount((state) => state.clearAllAccounts);
   const switchToAccount = useAntigravityAccount((state) => state.switchToAccount);
   const insertOrUpdateCurrentAccount = useAntigravityAccount((state) => state.insertOrUpdateCurrentAccount);
   const accountAdditionData = useAccountAdditionData();
@@ -102,13 +100,13 @@ export function AppContent() {
   // 由于 Antigravity (>=1.16.5) 仅在程序关闭时保存凭证，您需要先关闭一次 Antigravity 才能完成账户保存。
   // 所以这里判断下，发现程序关闭下就调用 insertOrUpdateCurrentAccount
   useEffect(() => {
-    antigravityIsRunning.addStatusChangeListener(isRunning => {
+    antigravityIsRunning.addStatusChangeListener(() => {
       insertOrUpdateCurrentAccount()
     })
   }, []);
 
   // 用户详情处理
-  const handleUserClick = (account: AccountSessionListAccountItem) => {
+  const handleUserClick = (account: AccountSessionAccount) => {
     setSelectedUser(account);
     setIsUserDetailOpen(true);
   };
@@ -118,15 +116,15 @@ export function AppContent() {
     setSelectedUser(null);
   };
 
-  const handleDeleteBackup = (user: AccountSessionListAccountItem) => {
+  const handleDeleteBackup = (email: string) => {
     Modal.confirm({
       centered: true,
       title: t('account:delete.title'),
       content: <p className={"wrap-break-word whitespace-pre-line"}>
-        {t('account:delete.message', { email: user.email })}
+        {t('account:delete.message', { email })}
       </p>,
       onOk() {
-        return confirmDeleteAccount(user.email);
+        return confirmDeleteAccount(email);
       },
       onCancel() {
       },
@@ -138,10 +136,10 @@ export function AppContent() {
     toast.success(t('account:delete.success', { email }));
   };
 
-  const handleSwitchAccount = async (user: AccountSessionListAccountItem) => {
+  const handleSwitchAccount = async (email: string) => {
     try {
-      appGlobalLoader.open({ label: t('account:switch.loading', { email: maskEmail(user.email) }) });
-      await switchToAccount(user.email);
+      appGlobalLoader.open({ label: t('account:switch.loading', { email: maskEmail(email) }) });
+      await switchToAccount(email);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       toast.error(t('account:switch.error', { error: errorMessage }));
@@ -150,38 +148,9 @@ export function AppContent() {
     }
   };
 
-  const handleClearAllBackups = () => {
-    if (accounts.length === 0) {
-      toast.error(t('account:clearAll.noBackups'));
-      return;
-    }
-
-    Modal.confirm({
-      centered: true,
-      title: t('account:clearAll.title'),
-      content: <p className={"wrap-break-word whitespace-pre-line"}>
-        {t('account:clearAll.message', { count: accounts.length })}
-      </p>,
-      onOk() {
-        return confirmClearAllBackups();
-      },
-      onCancel() {
-      },
-    });
-  };
-
-  const confirmClearAllBackups = async () => {
-    try {
-      await clearAllAccounts();
-      toast.success(t('account:clearAll.success'));
-    } catch (error) {
-      toast.error(t('account:clearAll.error', { error }));
-      throw error;
-    }
-  };
 
 
-  const accountsWithData: AccountSessionListAccountItem[] = accounts.map((account) => {
+  const accountsWithData: AccountSessionAccount[] = accounts.map((account) => {
     const accountAdditionDatum = accountAdditionData.data[account.antigravity_auth_status.email]
 
     return {
@@ -266,21 +235,25 @@ export function AppContent() {
 
   return (
     <>
-      <section className="flex flex-col relative flex-1">
-        <AccountsListToolbar
-          tiers={condition.tiers}
-          query={condition.query}
-          sortKey={condition.sortKey}
-          total={visibleAccounts.length}
-          onChange={setCondition}
-        />
-        <AccountSessionList
-          accounts={visibleAccounts}
-          onSwitch={handleSwitchAccount}
-          onDelete={handleDeleteBackup}
-          onSelect={handleUserClick}
-          currentUserEmail={currentAntigravityAccount?.antigravity_auth_status.email}
-        />
+      <section className="relative flex flex-1 px-4 pb-28 pt-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col gap-4">
+          <AccountsListToolbar
+            tiers={condition.tiers}
+            query={condition.query}
+            sortKey={condition.sortKey}
+            total={visibleAccounts.length}
+            onChange={setCondition}
+          />
+          <div className="app-panel relative min-h-0 flex-1 overflow-hidden">
+            <AccountSessionList
+              accounts={visibleAccounts}
+              onSwitch={handleSwitchAccount}
+              onDelete={handleDeleteBackup}
+              onSelect={handleUserClick}
+              currentUserEmail={currentAntigravityAccount?.antigravity_auth_status.email}
+            />
+          </div>
+        </div>
       </section>
 
       <BusinessUserDetail

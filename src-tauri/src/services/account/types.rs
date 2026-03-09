@@ -151,3 +151,45 @@ fn to_snake_case(input: &str) -> String {
 
     out
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{normalize_json_keys_to_snake_case, parse_auth_status_to_value};
+    use serde_json::json;
+
+    #[test]
+    fn normalize_json_keys_recurses_into_objects_and_arrays() {
+        let value = json!({
+            "camelCase": 1,
+            "HTTPStatus": 200,
+            "nestedValue": {
+                "display Name": "Alice",
+                "childItems": [{ "userID": 7 }]
+            }
+        });
+
+        let normalized = normalize_json_keys_to_snake_case(value);
+
+        assert_eq!(normalized["camel_case"], 1);
+        assert_eq!(normalized["http_status"], 200);
+        assert_eq!(normalized["nested_value"]["display_name"], "Alice");
+        assert_eq!(normalized["nested_value"]["child_items"][0]["user_id"], 7);
+    }
+
+    #[test]
+    fn parse_auth_status_to_value_normalizes_json_keys() {
+        let raw = r#"{"emailAddress":"user@example.com","apiKey":"sk-test","display Name":"User"}"#;
+
+        let parsed = parse_auth_status_to_value(raw).expect("should parse auth status");
+
+        assert_eq!(parsed["email_address"], "user@example.com");
+        assert_eq!(parsed["api_key"], "sk-test");
+        assert_eq!(parsed["display_name"], "User");
+    }
+
+    #[test]
+    fn parse_auth_status_to_value_rejects_invalid_json() {
+        let error = parse_auth_status_to_value("not-json").expect_err("should fail for invalid json");
+        assert!(error.contains("Failed to parse antigravityAuthStatus"));
+    }
+}

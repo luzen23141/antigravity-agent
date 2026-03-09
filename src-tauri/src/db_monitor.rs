@@ -2,59 +2,58 @@
 
 use crate::constants::database;
 use serde_json::Value;
-use std::sync::Arc;
 use tauri::{AppHandle, Emitter};
 use tokio::sync::Mutex;
+use tokio::task::JoinHandle;
 use tokio::time::{interval, Duration};
 use tracing::{error, info, warn};
 
 /// 数据库监控器
 pub struct DatabaseMonitor {
     app_handle: AppHandle,
-    last_data: Arc<Mutex<Option<Value>>>,
-    is_running: Arc<Mutex<bool>>,
+    last_data: Mutex<Option<Value>>,
+    task_handle: Mutex<Option<JoinHandle<()>>>,
 }
 
 impl DatabaseMonitor {
     pub fn new(app_handle: AppHandle) -> Self {
         Self {
             app_handle,
-            last_data: Arc::new(Mutex::new(None)),
-            is_running: Arc::new(Mutex::new(false)),
+            last_data: Mutex::new(None),
+            task_handle: Mutex::new(None),
         }
     }
 
+    pub async fn is_running(&self) -> bool {
+        self.task_handle.lock().await.is_some()
+    }
+
     /// 启动数据库监控
-    pub async fn start_monitoring(&self) {
+    pub async fn start_monitoring(&self) -> bool {
+        let mut task_handle = self.task_handle.lock().await;
+        if task_handle.is_some() {
+            info!("数据库监控已在运行，跳过重复启动");
+            return false;
+        }
+
         info!("🔧 启动数据库自动监控");
+        *self.last_data.lock().await = Self::get_data();
 
-        let last_data = self.last_data.clone();
-        let is_running = self.is_running.clone();
         let app_handle = self.app_handle.clone();
-
-        *is_running.lock().await = true;
-
-        tokio::spawn(async move {
+        let handle = tokio::spawn(async move {
             let mut interval = interval(Duration::from_secs(10));
+            let mut last_data = Self::get_data();
 
             loop {
                 interval.tick().await;
-
-                if !*is_running.lock().await {
-                    info!("⏹️ 数据库监控已停止");
-                    break;
-                }
 
                 let Some(new_data) = Self::get_data() else {
                     continue;
                 };
 
-                let mut last = last_data.lock().await;
-
-                // 首次加载只缓存数据，不发送事件
-                let has_changes = match last.as_ref() {
+                let has_changes = match last_data.as_ref() {
                     Some(old) => old != &new_data,
-                    None => false, // 首次加载不触发事件
+                    None => false,
                 };
 
                 if has_changes {
@@ -64,15 +63,26 @@ impl DatabaseMonitor {
                     }
                 }
 
-                *last = Some(new_data);
+                last_data = Some(new_data);
             }
         });
+
+        *task_handle = Some(handle);
+        true
     }
 
     /// 停止数据库监控
-    pub async fn stop_monitoring(&self) {
-        info!("⏹️ 停止数据库自动监控");
-        *self.is_running.lock().await = false;
+    pub async fn stop_monitoring(&self) -> bool {
+        let handle = self.task_handle.lock().await.take();
+        if let Some(handle) = handle {
+            info!("⏹️ 停止数据库自动监控");
+            handle.abort();
+            *self.last_data.lock().await = None;
+            true
+        } else {
+            info!("数据库监控已停止，忽略重复停止");
+            false
+        }
     }
 
     /// 获取数据库数据（失败返回 None，内部记录日志）

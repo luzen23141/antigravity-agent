@@ -1,4 +1,4 @@
-import { universalInvoke } from '@/lib/invoke-adapter';
+import { invokeCommand } from '@/lib/invoke-adapter';
 import { AntigravityAccount, CommandResult } from "@/commands/types/account.types.ts";
 
 type AnyRecord = Record<string, unknown>;
@@ -56,7 +56,7 @@ export class AccountCommands {
    * @returns 账户认证信息，包含邮箱、数据库路径等
    */
   static async getCurrentAntigravityAccount(): Promise<AntigravityAccount> {
-    const raw = await universalInvoke<unknown>('get_current_antigravity_account_info');
+    const raw = await invokeCommand<unknown>('get_current_antigravity_account_info');
     const normalized = normalizeAccount(raw);
     if (!normalized) {
       throw new Error('Invalid account payload from get_current_antigravity_account_info');
@@ -69,7 +69,7 @@ export class AccountCommands {
    * @returns 账户列表
    */
   static async getAntigravityAccounts(): Promise<AntigravityAccount[]> {
-    const raw = await universalInvoke<unknown>('get_antigravity_accounts');
+    const raw = await invokeCommand<unknown>('get_antigravity_accounts');
     if (!Array.isArray(raw)) {
       throw new Error('Invalid accounts payload from get_antigravity_accounts');
     }
@@ -83,7 +83,7 @@ export class AccountCommands {
    * @returns 备份结果消息
    */
   static async saveAntigravityCurrentAccount(): Promise<CommandResult> {
-    return universalInvoke('save_antigravity_current_account');
+    return invokeCommand('save_antigravity_current_account');
   }
 
   /**
@@ -92,7 +92,7 @@ export class AccountCommands {
    * @returns 切换结果消息
    */
   static async switchToAntigravityAccount(accountName: string): Promise<CommandResult> {
-    return universalInvoke('switch_to_antigravity_account', { accountName: accountName });
+    return invokeCommand('switch_to_antigravity_account', { accountName: accountName });
   }
 
   /**
@@ -100,6 +100,6 @@ export class AccountCommands {
    * @returns 清除结果消息
    */
   static async clearAllData(): Promise<CommandResult> {
-    return universalInvoke('clear_all_antigravity_data');
+    return invokeCommand('clear_all_antigravity_data');
   }
 }

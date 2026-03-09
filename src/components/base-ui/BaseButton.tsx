@@ -26,34 +26,28 @@ export interface BaseButtonProps extends NativeButtonProps {
 // Vercel / Geist-ish 风格（高对比、干净、克制）
 const buttonVariants: Record<NonNullable<BaseButtonProps['variant']>, string> = {
   default: cn(
-    'bg-zinc-900 text-zinc-50 border border-zinc-900/90 shadow-sm shadow-black/20',
-    'hover:bg-zinc-800 hover:border-zinc-800',
-    'dark:bg-zinc-50 dark:text-zinc-900 dark:border-zinc-50 dark:hover:bg-zinc-200 dark:shadow-none'
+    'bg-primary text-primary-foreground border border-primary/90 shadow-sm shadow-primary/15',
+    'hover:bg-primary/92 hover:border-primary'
   ),
   destructive: cn(
-    'bg-red-600 text-white border border-red-600 shadow-sm shadow-red-600/30',
-    'hover:bg-red-700 hover:border-red-700',
-    'dark:bg-red-500 dark:border-red-500 dark:hover:bg-red-600 dark:hover:border-red-600'
+    'bg-destructive text-white border border-destructive shadow-sm shadow-destructive/20',
+    'hover:brightness-95'
   ),
   outline: cn(
-    'bg-white text-zinc-900 border border-zinc-200 shadow-sm',
-    'hover:bg-zinc-50 hover:border-zinc-300',
-    'dark:bg-zinc-950 dark:text-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900'
+    'bg-card/90 text-foreground border border-border shadow-sm',
+    'hover:bg-accent/60 hover:border-border/90'
   ),
   secondary: cn(
-    'bg-zinc-100 text-zinc-900 border border-transparent shadow-sm',
-    'hover:bg-zinc-200',
-    'dark:bg-zinc-800 dark:text-zinc-50 dark:hover:bg-zinc-700'
+    'bg-secondary text-secondary-foreground border border-transparent shadow-sm',
+    'hover:bg-secondary/80'
   ),
   ghost: cn(
-    'bg-transparent text-zinc-900 border border-transparent',
-    'hover:bg-zinc-100/70',
-    'dark:text-zinc-50 dark:hover:bg-zinc-800/60'
+    'bg-transparent text-foreground border border-transparent',
+    'hover:bg-accent/60'
   ),
   link: cn(
-    'bg-transparent text-zinc-900 p-0 h-auto underline-offset-4',
-    'hover:underline',
-    'dark:text-zinc-50'
+    'bg-transparent text-foreground p-0 h-auto underline-offset-4',
+    'hover:underline'
   ),
 };
 
@@ -102,14 +96,14 @@ const BaseButton = React.forwardRef<HTMLButtonElement, BaseButtonProps>(
         className={cn(
           // 基础样式
           'relative inline-flex items-center justify-center gap-2 whitespace-nowrap select-none cursor-pointer',
-          'rounded-md font-medium leading-none',
-          'transition-colors duration-150',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/60 focus-visible:ring-offset-2',
-          'focus-visible:ring-offset-white dark:focus-visible:ring-offset-zinc-950',
+          'rounded-xl font-medium leading-none',
+          'transition-[background-color,border-color,color,box-shadow,transform] duration-150',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+          'focus-visible:ring-offset-background',
           'disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed',
           '[&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0',
           // Hover 反馈（link/ghost 更克制）
-          canHoverRing && 'hover:ring-1 hover:ring-zinc-900/10 dark:hover:ring-white/10',
+          canHoverRing && 'hover:ring-1 hover:ring-ring/40',
           canHoverShadow && 'hover:shadow-md',
 
           // 变体样式

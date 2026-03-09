@@ -8,20 +8,27 @@ import { cn } from '@/lib/utils.ts';
 import { AlertTriangle, Download, Loader2, RotateCw } from 'lucide-react';
 import type { DownloadProgress, UpdateInfo, UpdateState } from '@/services/updateService.ts';
 import { Tooltip } from "antd";
-
-type BadgeVariant = 'secondary' | 'destructive' | 'success' | 'warning';
+import { BadgeVariant, resolveUpdatePresentation } from '@/components/business/update-presentation.ts';
+import type { UpdateBadgeIcon } from '@/components/business/update-presentation.ts';
 
 const badgeVariantClasses: Record<BadgeVariant, string> = {
-  secondary: 'bg-gray-600 text-gray-100',
-  destructive: 'bg-red-600 text-white',
-  success: 'bg-green-600 text-white',
-  warning: 'bg-yellow-600 text-white',
+  secondary: 'bg-secondary text-secondary-foreground border border-border/70',
+  destructive: 'bg-destructive text-white border border-transparent',
+  success: 'bg-emerald-600 text-white border border-transparent',
+  warning: 'bg-amber-500 text-foreground border border-transparent',
 };
 
 interface InlineBadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
   variant: BadgeVariant;
   children: React.ReactNode;
 }
+
+const badgeIconMap: Record<UpdateBadgeIcon, React.ReactNode> = {
+  download: <Download className="h-3.5 w-3.5" />,
+  loading: <Loader2 className="h-3.5 w-3.5 animate-spin" />,
+  restart: <RotateCw className="h-3.5 w-3.5" />,
+  error: <AlertTriangle className="h-3.5 w-3.5" />,
+};
 
 const InlineBadge: React.FC<InlineBadgeProps> = ({
   variant,
@@ -32,7 +39,7 @@ const InlineBadge: React.FC<InlineBadgeProps> = ({
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full font-medium',
+        'inline-flex items-center gap-1.5 rounded-full font-medium shadow-sm',
         badgeVariantClasses[variant],
         'px-2 py-0.5 text-xs',
         className
@@ -103,7 +110,6 @@ const UpdateBadge: React.FC<UpdateBadgeProps> = ({
   const handleStartDownload = async () => {
     try {
       await startDownload();
-      toast.success(t('toast.downloadComplete'));
     } catch (error) {
       // 只在控制台打印错误，不提示用户
       logger.error('下载失败', {
@@ -135,82 +141,33 @@ const UpdateBadge: React.FC<UpdateBadgeProps> = ({
     return null;
   }
 
-  const badgeVariant: BadgeVariant = updateError
-    ? 'destructive'
-    : updateState === 'ready-to-install'
-      ? 'success'
-      : updateState === 'downloading'
-        ? 'secondary'
-        : 'warning';
-
-  const badgeContent = (() => {
-    switch (updateState) {
-      case 'update-available':
-        return (
-          <>
-            <Download className="h-3.5 w-3.5" />
-            <span>{t('badge.available')}</span>
-          </>
-        );
-      case 'downloading':
-        return (
-          <>
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            <span>{downloadProgress?.percentage ?? 0}%</span>
-          </>
-        );
-      case 'ready-to-install':
-        return (
-          <>
-            <RotateCw className="h-3.5 w-3.5" />
-            <span>{t('badge.restart')}</span>
-          </>
-        );
-      case 'error':
-        return (
-          <>
-            <AlertTriangle className="h-3.5 w-3.5" />
-            <span>{t('badge.failed')}</span>
-          </>
-        );
-      default:
-        return (
-          <>
-            <Download className="h-3.5 w-3.5" />
-            <span>{t('badge.default')}</span>
-          </>
-        );
-    }
-  })();
-
-  const tooltipContent = updateError
-    ? t('tooltip.failed', { error: updateError })
-    : updateState === 'update-available' && updateInfo
-      ? t('tooltip.available', { version: updateInfo.version })
-      : updateState === 'downloading'
-        ? t('tooltip.downloading', { percentage: downloadProgress?.percentage ?? 0 })
-        : updateState === 'ready-to-install'
-          ? t('tooltip.ready')
-          : t('tooltip.check');
+  const presentation = resolveUpdatePresentation({
+    t,
+    state: updateState,
+    error: updateError,
+    updateInfo,
+    progress: downloadProgress,
+  });
 
   return (
     <>
       {/* 更新徽章 */}
-      <Tooltip title={tooltipContent}>
+      <Tooltip title={presentation.tooltipContent}>
         <button
           type="button"
           onClick={handleUpdateBadgeClick}
-          className={cn('ml-2 inline-flex cursor-pointer', className)}
+          className={cn('inline-flex cursor-pointer', className)}
           aria-label="Application update"
         >
           <InlineBadge
-            variant={badgeVariant}
+            variant={presentation.badgeVariant}
             className={cn(
               'gap-1.5 select-none',
               updateState === 'update-available' && !updateError && 'animate-pulse'
             )}
           >
-            {badgeContent}
+            {badgeIconMap[presentation.badgeIcon]}
+            <span>{presentation.badgeLabel}</span>
           </InlineBadge>
         </button>
       </Tooltip>

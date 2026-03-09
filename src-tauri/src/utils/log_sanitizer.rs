@@ -156,3 +156,52 @@ pub fn sanitize_log_message(message: &str) -> String {
     let sanitizer = LogSanitizer::new();
     sanitizer.sanitize(message)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{sanitize_log_message, LogSanitizer};
+
+    #[test]
+    fn sanitize_email_masks_using_current_formatter() {
+        let sanitizer = LogSanitizer::new();
+        let input = "contact user@example.com for support";
+
+        let output = sanitizer.sanitize_email(input);
+
+        assert!(output.contains("ur@@example.com"));
+        assert!(!output.contains("user@example.com"));
+    }
+
+    #[test]
+    fn sanitize_paths_replaces_unix_home_prefix() {
+        let sanitizer = LogSanitizer::new();
+        let input = "/home/alex/.antigravity-agent/config.json";
+
+        let output = sanitizer.sanitize_paths(input);
+
+        assert_eq!(output, "~/.antigravity-agent/config.json");
+    }
+
+    #[test]
+    fn sanitize_api_keys_masks_secret_value() {
+        let sanitizer = LogSanitizer::new();
+        let input = "token: abcdef1234567890uvwxyz";
+
+        let output = sanitizer.sanitize_api_keys(input);
+
+        assert!(output.contains("tokenabcd"));
+        assert!(output.contains('*'));
+        assert!(!output.contains("abcdef1234567890uvwxyz"));
+    }
+
+    #[test]
+    fn sanitize_log_message_combines_all_rules() {
+        let input = "email user@example.com path /home/alex/test token: abcdef1234567890uvwxyz";
+
+        let output = sanitize_log_message(input);
+
+        assert!(!output.contains("user@example.com"));
+        assert!(!output.contains("/home/alex"));
+        assert!(!output.contains("abcdef1234567890uvwxyz"));
+    }
+}
