@@ -36,7 +36,7 @@ pub struct AccountMetrics {
     pub email: String,
     pub user_id: String,
     pub avatar_url: String,
-    pub project_id: String,
+    pub project_id: Option<String>,
     pub quotas: Vec<QuotaItem>,
 }
 

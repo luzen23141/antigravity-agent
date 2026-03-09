@@ -86,16 +86,20 @@ pub async fn get_metrics(
 
     let project = google_api::fetch_code_assist_project(&valid_access_token)
         .await
-        .map_err(|e| format!("Failed to fetch project id: {e}"))?;
+        .map_err(|e| tracing::warn!(email = %email, "Failed to fetch project id: {e}"))
+        .ok();
 
-    let models_json = google_api::fetch_available_models(&valid_access_token, &project)
-        .await
-        .map_err(|e| format!("Failed to fetch models: {e}"))?;
-
-    let quotas = parse_quotas_for_targets(&models_json)
-        .into_iter()
-        .map(|quota| quota.item)
-        .collect();
+    let quotas = if let Some(ref project_id) = project {
+        let models_json = google_api::fetch_available_models(&valid_access_token, project_id)
+            .await
+            .map_err(|e| format!("Failed to fetch models: {e}"))?;
+        parse_quotas_for_targets(&models_json)
+            .into_iter()
+            .map(|quota| quota.item)
+            .collect()
+    } else {
+        vec![]
+    };
 
     Ok(AccountMetrics {
         email,

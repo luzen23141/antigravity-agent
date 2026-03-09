@@ -102,7 +102,7 @@ export interface AccountMetrics {
   email: string
   user_id: string
   avatar_url: string
-  project_id: string
+  project_id: string | null
   quotas: QuotaItem[]
 }
 

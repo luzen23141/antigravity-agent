@@ -30,7 +30,7 @@ export interface AccountSessionDetailAccount {
   apiKey: string;
   accessToken: string;
   refreshToken: string;
-  projectId: string;
+  projectId: string | null;
   expiresIn: number | null;
 }
 

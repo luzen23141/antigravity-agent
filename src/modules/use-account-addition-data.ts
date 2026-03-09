@@ -24,7 +24,7 @@ export interface AccountAdditionData {
   claudeQuoteRestIn: string
   userAvatar: string
   userId: string
-  projectId: string
+  projectId: string | null
 }
 
 export const useAccountAdditionData = create<State & Actions>((setState, getState) => ({
